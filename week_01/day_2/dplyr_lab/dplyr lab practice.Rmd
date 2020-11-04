@@ -1,0 +1,88 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+#Lab practice
+
+```{r}
+income_data <- read.csv("state_income_data.csv")
+income_data
+```
+```{r}
+glimpse(income_data)
+```
+
+```{r}
+dim(income_data)
+```
+```{r}
+head(income_data, 10)
+```
+```{r}
+names(income_data)
+```
+```{r}
+library(tidyverse)
+b <- select(income_data, "Index", "State", "Y2002":"Y2008")
+b
+```
+
+```{r}
+income_letter <- rename(b, "first_letter" = "Index")
+income_letter
+```
+
+```{r}
+
+a <- filter(income_letter, first_letter %in% c("A", "B", "C")) 
+a
+```
+```{r}
+arrange(a, desc("Y2008")) 
+```
+From answers
+```{r}
+state_arranged <- a %>% 
+    select(State, Y2008) %>%
+    arrange(desc(Y2008)) 
+
+state_arranged
+```
+
+
+```{r}
+c <- mutate(a, income_change = Y2008 - Y2002)
+c
+```
+```{r}
+filter(c, income_change > 500000 | income_change < -500000)
+```
+```{r}
+summarise(c, mean(income_change))
+```
+```{r}
+summarise(c,median(income_change))
+```
+# Question 9
+
+```{r}
+income_data %>% 
+select( "State", "Y2008") %>% 
+  arrange(desc("Y2008")) %>%
+  filter(Y2008 >= 1000000) %>% 
+  head(10)
+  
+
+```
+Answer from question
+```{r}
+highest_income <- income_data %>% 
+  select(State, Y2008) %>%
+  arrange(desc(Y2008)) %>%
+  filter(Y2008 >=1000000) %>%
+  head(10)
+
+highest_income 
+```
+
+

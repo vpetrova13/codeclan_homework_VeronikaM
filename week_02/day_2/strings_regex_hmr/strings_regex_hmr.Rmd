@@ -1,0 +1,135 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+```{r}
+twitter <- read_csv("data/code_clan_tweets.csv")
+```
+Q1:
+```{r}
+dim(twitter)
+ncol(twitter)
+nrow(twitter)
+names(twitter)
+```
+Q2:
+```{r}
+twitter %>% 
+  filter(is_quote == FALSE) %>% 
+  summarise(sum(favorite_count))
+```
+Q3:
+```{r}
+twitter %>% 
+  filter(is_quote == FALSE) %>% 
+  group_by(source) %>% 
+  summarise(mean(retweet_count))
+  
+```
+Q4:
+```{r}
+twitter %>%
+  mutate(media_type2 = replace_na(media_type, "text")) %>%
+  group_by(media_type2) %>%
+  summarise(favourite_count_total = sum(favorite_count)) %>%
+  arrange(desc(favourite_count_total))
+```
+Q5:
+```{r}
+twitter %>%
+  summarise(avg_tweet_length = mean(display_text_width))
+```
+```{r}
+sum(is.na(twitter$text))
+```
+Q6:
+```{r}
+codeclan <- read_csv("data/code_clan_info.csv")
+
+code_clan_tweets <- left_join(twitter, codeclan, by = "tweet_id")
+code_clan_tweets
+```
+Q7:
+
+```{r}
+codeclan_hashtags <- code_clan_tweets %>% 
+  select(tweet_id, hashtags) %>%
+  mutate(lowcase_hashtag = str_to_lower(hashtags)) %>%
+  select(-hashtags) %>%
+  drop_na(lowcase_hashtag)
+
+codeclan_hashtags
+```
+
+```{r}
+codeclan_hashtags <- code_clan_tweets %>% 
+  select(tweet_id, hashtags) %>% 
+  mutate(hashtags = str_to_lower(hashtags)) %>% 
+  na.exclude(hashtags)
+
+
+codeclan_hashtags
+
+```
+Q8:
+```{r}
+hashtags_multiple <- codeclan_hashtags %>% 
+  mutate(first_letters = str_sub(lowcase_hashtag, 1, 2)) %>%
+  filter(str_detect(first_letters, "c\\("))
+
+hashtags_multiple
+```
+Q9:
+```{r}
+pattern <- "(?i)Edinburgh"
+
+code_clan_tweets_text <- c(code_clan_tweets$text) %>% 
+  str_detect(pattern) %>% 
+  str_extract_all(pattern) %>% 
+  length()
+
+code_clan_tweets_text
+
+```
+```{r}
+code_clan_tweets %>%
+  mutate(lowcase_tweets = str_to_lower(text)) %>%
+  filter(str_detect(lowcase_tweets, "edinburgh")) %>%
+  summarise(count = n())
+```
+
+Q10:
+```{r}
+code_clan_tweets <- code_clan_tweets %>% 
+  mutate(retweet_user_id = format(retweet_user_id, scientific = FALSE)) %>% 
+  select(retweet_user_id) %>% 
+  na.exclude(retweet_user_id)
+  
+code_clan_tweets
+
+```
+```{r}
+user_pattern <- "@[a-zA-Z0-9_]+"
+tweets <- code_clan_tweets %>% 
+  select(text)
+head(str_extract_all(tweets$text, user_pattern))
+```
+
+```{r}
+tweets %>%  
+  mutate(tweeters = str_extract_all(text, "(^|[^@\\w])@(\\w{1,15})\\b")) %>% 
+  select(tweeters, text) %>% 
+pull(tweeters)
+```
+
+
+
+
+
+
+

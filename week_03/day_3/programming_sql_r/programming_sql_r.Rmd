@@ -1,0 +1,182 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(RPostgres)
+```
+```{r}
+source("~/acme_credentials.R")
+
+db_connection <- dbConnect(
+  drv = Postgres(),
+  user = acme_username,
+  password = acme_password,
+  dbname = "acme_pool", 
+  host = "db-postgresql-lon1-94437-do-user-4831272-0.a.db.ondigitalocean.com",
+  port = 25061,
+  bigint = "numeric"
+)
+
+rm(acme_username, acme_password)
+```
+
+```{r}
+dbListTables(conn = db_connection)
+```
+```{r}
+dbListFields(db_connection, name = "employees")
+```
+```{r}
+employees <- dbGetQuery(db_connection, 
+                        statement = "SELECT * FROM employees;")
+
+employees
+```
+```{r}
+employees <- employees %>% 
+  mutate(full_name = str_c(first_name, last_name, sep = " "))
+
+employees
+```
+```{r}
+teams <- dbGetQuery(db_connection, 
+                        statement = "SELECT * FROM teams;")
+
+teams
+```
+
+```{r}
+empl_teams <- left_join(employees, teams, by = c("team_id" = "id"))
+
+empl_teams
+```
+
+```{r}
+empl_teams <- empl_teams %>% 
+  rename(team_name = name)
+
+empl_teams
+```
+```{sql, connection = db_connection}
+SELECT *
+FROM employees LEFT JOIN teams 
+on employees.team_id = teams.id
+```
+
+
+```{sql, connection = db_connection}
+
+SELECT count(employees.id), teams.name
+FROM employees RIGHT JOIN teams 
+on employees.team_id = teams.id
+GROUP BY teams.name
+ORDER BY count(employees.id) DESC;
+
+```
+```{sql, connection = db_connection}
+
+SELECT *
+FROM employees
+WHERE email NOT LIKE '%@%' OR email IS NULL ;
+
+```
+Extension:
+Q9:
+```{sql, connection = db_connection}
+
+SELECT *
+FROM feedbacks
+ORDER BY date DESC 
+LIMIT 1;
+
+```
+```{sql, connection = db_connection}
+
+SELECT f.date, e.first_name, e.last_name, e.id
+FROM feedbacks as f left join employees as e on f.employee_id = e.id
+ORDER BY f.date DESC 
+LIMIT 1;
+
+```
+Q10:
+```{sql, connection = db_connection}
+
+SELECT *
+FROM employees
+where first_name LIKE '_'
+
+
+
+```
+```{sql, connection = db_connection}
+
+SELECT count(id), team_id
+FROM employees
+where first_name LIKE '_'
+GROUP BY team_id
+
+
+```
+```{sql, connection = db_connection}
+
+SELECT count(e.id), e.team_id, t.name
+FROM employees as e left join teams as t on e.team_id = t.id
+where e.first_name LIKE '_'
+GROUP BY t.name, e.team_id
+
+
+```
+Q11:
+```{r}
+positive_words <- c("great", "good", "happy", "content", "fulfilled", "fulfilling", "positive", "positives", "cheerful", "nice", "ambition", "ambitions", "ambitious", "progress", "joy", "fast", "achieve", "achieving", "achievements", "best", "better",  "unlimited", "pros", "competitive", "opportunity", "advancement", "friendly", "smart", "interesting", "challenging", "grow", "caring", "balance", "helpful", "advantage", "learning", "ethical", "responsible", "responsibilities")
+
+negative_words <- c("worse", "worsening", "worst", "slow", "sluggish", "impatient", "unfulfilled", "unfulfilling", "negative", "bad", "limited", "limit", "limitations", "cons", "frustrated", "frustrating", "frustration", "dull", "boring", "politics", "political", "ignore", "ignored", "ignoring", "sad", "depressed", "depressing", "nasty", "stress", "stresses", "stressed", "stressful", "horrid", "horrible", "terrible", "deadline", "deadlines", "uncaring", "remote", "difficult", "difficulties", "bully", "bullying")
+```
+
+```{r}
+sentiment_words <- tibble(
+  word = positive_words,
+  score = 1
+) %>% bind_rows(
+  tibble(
+    word = negative_words,
+    score = -1
+  )
+)
+
+sentiment_words
+```
+
+```{sql, connection = db_connection, output.var = "feedbacks"}
+
+select * 
+from feedbacks
+
+
+```
+
+```{r}
+clean_feedbacks <- feedbacks %>% 
+  select(message) %>% 
+  mutate(message = str_to_lower(message)) %>% 
+  mutate(message = str_remove_all(message, "[:punct:]")) %>% 
+  mutate(message = str_squish(message)) %>% 
+  mutate(message = str_trim(message))
+
+clean_feedbacks
+```
+```{r}
+clean_feedbacks <- separate_rows(clean_feedbacks, 1, sep = " ")
+clean_feedbacks
+```
+
+```{r}
+total_score <- inner_join(clean_feedbacks, sentiment_words, by = c("message"="word")) %>% 
+  mutate(total_score_sum = sum(score))
+
+total_score
+```
+

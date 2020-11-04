@@ -1,0 +1,136 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+movies <- read_csv("data/movies.csv")
+```
+
+```{r}
+head(movies)
+```
+```{r}
+dim(movies)
+```
+Q1: 
+* Original title and title looks the same so I would remove one of the column.
+*I don't think I need homepage, overview and tagline so I would remove these columns.
+*I would put all the title to lower case.
+*I would remove all NAs.
+*I would use clean_names function from janitor.
+
+there seems to be a lot of NAs in the homepage and tagline columns
+there are two columns: original_title and title that seem to contain similar things
+there’s a lot of movies with a budget and revenue of 0 - presumably missing data
+you’d lose 3310 out of 4803 rows if you dropped all NAs - that’s a bit much, so probably better to deal with them in some other way
+
+```{r}
+movies_selected <- movies %>% 
+  select(original_title, runtime, budget)
+
+movies_selected
+```
+
+```{r}
+movies_selected %>% 
+  summarise(sum_of_NA = sum(is.na(original_title), is.na(runtime), is.na(budget)))
+```
+
+
+```{r}
+sum(is.na(movies_selected))
+```
+
+
+```{r}
+movies_runtime <- movies_selected %>%
+  mutate(runtime = na_if(runtime, 0))  %>% 
+  summarise(count = sum(is.na(runtime)))
+  
+movies_runtime
+```
+```{r}
+sum(is.na(movies_runtime))
+
+```
+```{r}
+movies_selected %>% 
+  summarise(across(.fns = ~sum(is.na(.x))))
+```
+
+Impute the missing values in runtime with the median runtime using coalesce and save this into a new variable called movies_imputed. There should now be no missing values in the column runtime - check this to make sure.
+
+```{r}
+movies_imputed <- movies_runtime %>% 
+  mutate(runtime = coalesce(runtime, median(runtime, na.rm = TRUE)))
+
+movies_imputed
+```
+
+```{r}
+sum(is.na(movies_imputed))
+```
+```{r}
+longest_runtime <- movies_imputed %>% 
+  slice_max(runtime, n = 10)
+
+longest_runtime
+```
+```{r}
+shortest_runtime <- movies_imputed %>% 
+  slice_min(runtime, n = 10)
+
+shortest_runtime
+```
+
+
+```{r}
+md <- median(movies_imputed$budget)
+movies_imputed <- movies_imputed %>% 
+  mutate(budget = 
+           if_else(budget < 100, md, budget))
+
+new_budget
+```
+
+Extension
+```{r}
+movie_budgets <- movies_imputed %>%
+  mutate(
+    budget_type = case_when(
+      budget < 12e6 ~ "Small budget",
+      budget < 40e6 ~ "Medium budget",
+      budget >= 40e6 ~ "Big budget"
+      )
+    )
+
+movie_budgets
+
+```
+
+```{r}
+str(movies)
+```
+```{r}
+movies %>% 
+  summarise(across(where(is.numeric), ~sum(is.na(.x)))) 
+
+
+
+```
+
+```{r}
+movies %>%
+  summarise(across(where(is.character), ~sum(is.na(.x))))
+```
+```{r}
+movies_selected %>% 
+  summarise(across(.fns = ~sum(is.na(.x))))
+```
+
+

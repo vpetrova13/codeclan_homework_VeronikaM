@@ -1,0 +1,131 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Homework 20/10/20
+Starbucks calories dataset
+Answer 1:
+```{r}
+starbucks <- read.csv("data/starbucks_drinkMenu_expanded.csv")
+starbucks
+```
+
+```{r}
+dim(starbucks)
+```
+```{r}
+library(tidyverse)
+glimpse(starbucks)
+```
+```{r}
+nrow(starbucks)
+```
+```{r}
+names(starbucks)
+```
+Answer 2: 
+```{r}
+calories <- select(starbucks, "Beverage_category":"Calories") %>% 
+  filter(is.na(Calories))
+calories
+```
+```{r}
+calories <- starbucks %>% 
+  select("Beverage_category":"Calories") %>% 
+  filter(!is.na(Calories))
+calories
+```
+
+Teachers answers:
+
+```{r}
+drinks <- starbucks %>%
+  select(Beverage_category, Beverage, Beverage_prep, Calories) %>%
+  mutate(is_empty = is.na(Calories)) 
+
+drinks %>% filter(is_empty == FALSE)
+```
+
+
+Answer 3:
+```{r}
+calorie_dif <- mutate(calories, 135 - Calories)
+calorie_dif
+```
+Answer 4:
+```{r}
+gr <- calorie_dif %>% 
+  group_by(Beverage_category) %>% 
+  summarise(mean(Calories)) %>% 
+gr
+```
+```{r}
+most_calories <- calorie_dif %>%
+  group_by(Beverage_category) %>%
+  summarise(mean_calories = mean(Calories)) %>%
+  arrange(desc(mean_calories)) %>%
+  head(3)
+most_calories
+```
+```{r}
+least_calories <- calorie_dif %>%
+  group_by(Beverage_category) %>%
+  summarise(mean_calories = mean(Calories)) %>%
+  arrange(mean_calories)%>%
+  head(3)
+least_calories
+```
+
+```{r}
+average_bev_prep <- calorie_dif %>%
+  select(Beverage_prep, Calories) %>%
+  group_by(Beverage_prep) %>%
+  summarise(mean_cals = mean(Calories)) %>%
+  arrange(desc(mean_cals))
+average_bev_prep
+```
+
+
+```{r}
+sm <- select(calories, "Beverage_prep", "Calories" )
+sm
+  
+```
+
+
+```{r}
+nm <- summarise(sm, mean(Calories)) 
+nm
+```
+```{r}
+bm <- group_by(sm, Beverage_prep)
+bm
+```
+```{r}
+dm <- summarise(bm, "mean(Calories)")
+dm
+```
+```{r}
+avg_calories <- mean(calorie_dif$Calories)
+
+```
+```{r}
+above_avg_calories <- average_bev_prep %>%
+  filter(mean_cals >= avg_calories)
+
+above_avg_calories
+```
+
+
+```{r}
+calorie_dif %>%
+  filter(Beverage_category != "Tazo® Tea Drinks") %>%
+  group_by(Beverage_category, Beverage, Beverage_prep) %>%
+  summarise(min_calories = min(Calories)) %>%
+  arrange(min_calories) %>%
+  head(1)
+```
+
+
+
+

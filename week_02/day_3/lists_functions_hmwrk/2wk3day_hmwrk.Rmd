@@ -1,0 +1,165 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Q1:
+```{r}
+weather_forecast <- list(wednesday = list(temperature = 6, chance_of_rain = "3%",
+                                    wind_speed = "19 km/h"), 
+                      thursday = list(temperature = 13, chance_of_rain = "100%",
+                                    wind_speed = "23 km/h"), 
+                      friday = list(temperature = 13, chance_of_rain = "20%",
+                                    wind_speed = "27 km/h"))
+weather_forecast
+```
+Q2:
+```{r}
+weather_forecast[["thursday"]][["chance_of_rain"]]
+weather_forecast[["friday"]][["wind_speed"]]
+weather_forecast[["thursday"]][["temperature"]]
+```
+Q3:
+```{r}
+temperature_forecast <- matrix(c(6, 14, 14, 12, 12, 10, 10, 11, 10, 9, 9, 8, 9, 8),
+                                 nrow = 2, ncol = 7, byrow = TRUE)
+temperature_forecast
+```
+Q4:
+```{r}
+temperature_forecast[2, 3]
+temperature_forecast[2, ]
+temperature_forecast[1:2, c(1, 3, 5)]
+```
+Q5:
+```{r}
+func <- function(x) {
+   if (x < 10) {
+    paste("The answer is:",x , sep = " ")
+  } else if (x >= 10) {
+    (y<- x/10)
+    round(y)} else
+    {print("Invalid input")}
+  { return(y)
+  }
+```
+```{r}
+answer_or_divide <- function(x) {
+  if (is.character(x)) {
+    return(paste("The answer is: ", x))
+  }
+
+  if (is.numeric(x)) {
+    if (x < 10) {
+      return(x)
+    } else {
+      return(x / 10)
+    }
+  }
+
+  return("Invalid input")
+}
+```
+```{r}
+answer_or_divide(30)
+```
+
+```{r}
+x <- 12
+
+if (x < 10) {
+    paste("The answer is:",x , sep = " ")
+  } else if (x >= 10 && x %% 10 == 0) {
+    (y<- x/10)
+    round(y)} else
+      {print("Invalid input")}
+  
+```
+
+Q6:
+```{r}
+x<- c(1, 2, 3)
+y<- c(2, 1, 5)
+
+vector_check <- function(x, y) {
+  sort(x) && sort(y)
+  identical(x) == identical(y)
+  if (x[1:length(x)] == y[1:length(y)]) {
+    return("exactly the same")
+  } else if (x[1:length(x)] != y[1:length(y)]) {
+    return("different")
+  }
+}
+ 
+vector_check(x, y) 
+```
+
+```{r}
+
+x<- c(1, 2, 3)
+y<- c(2, 1, 5)
+
+is_same_vector <- function(vector_1, vector_2) {
+  if (all(vector_1 == vector_2)) {
+    return("Exactly the same")
+  }
+
+  if (all(sort(vector_1) == sort(vector_2))) {
+    return("The same")
+  }
+
+  return("Different")
+}
+```
+
+```{r}
+is_same_vector(x, y)
+```
+
+
+Q7:
+```{r}
+matrix(1:144, ncol = 12, nrow = 12, byrow = TRUE)
+```
+```{r}
+
+matrix(1:12) %*% t(matrix(1:12))
+```
+
+```{r}
+make_histogram <- function(x){
+  
+  distinct <- sort(unique(x))
+  
+  for (i in distinct){
+    
+    count <- sum(x == i)
+    
+    cat(i)
+    cat(" | ")
+    cat(rep("*", count))
+    cat("\n")
+    
+  }
+  
+}
+```
+
+
+```{r}
+x<- sample(1:10, 100, replace = TRUE)
+make_histogram(x)
+```
+
+```{r}
+x <- 1:10
+x
+
+for (number in x) {
+  print(paste(number, number * 2))
+  
+}
+```
+
+
+

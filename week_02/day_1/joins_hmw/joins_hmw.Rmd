@@ -1,0 +1,143 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+card_base <- read_csv("data/CardBase.csv") %>% clean_names()
+customer_base <- read_csv("data/CustomerBase.csv") %>% clean_names()
+fraud_base <- read_csv("data/FraudBase.csv") %>% clean_names()
+transaction_base <- read_csv("data/TransactionBase.csv") %>% clean_names()
+```
+
+
+
+```{r}
+card <- read_csv("data/CardBase.csv")
+customer <- read_csv("data/CustomerBase.csv")
+fraud <- read_csv("data/FraudBase.csv")
+transaction <- read_csv("data/TransactionBase.csv")
+```
+Q1:
+```{r}
+card <- clean_names(card)
+customer <- clean_names(customer)
+fraud <- clean_names(fraud)
+transaction <- clean_names(transaction)
+
+```
+
+Q2:
+```{r}
+left_join(card, customer, by = "cust_id")
+```
+Q3:
+```{r}
+full_join(fraud, transaction, by = "transaction_id")
+```
+Q4:
+```{r}
+semi_join(card, transaction, by = c("card_number" = "credit_card_id"))
+```
+Number 1.2
+Q5:
+```{r}
+hat_observations <- read_csv("data/hat_observations.csv")
+hat_observations
+```
+```{r}
+hat_observations_sep <- hat_observations %>% 
+  separate(observation, into = c("hat_colour", "hat_type"), sep = ",")
+
+hat_observations_sep
+```
+Q6:
+```{r}
+hat_observations_date <- hat_observations_sep %>% 
+  unite("date", day:year, sep = "-") 
+
+hat_observations_date %>% 
+  filter(hat_type == "beret") %>% 
+  group_by(date) %>% 
+  summarise(total = sum(observation_count)) %>% 
+  slice_max(total)
+```
+
+
+```{r}
+hat_observations_sep %>% 
+  unite(col = date,
+        c("day", "month", "year"),
+        sep = "/") %>% 
+  group_by(date) %>% 
+  filter(hat_type == "beret") %>% 
+  summarise(total = sum(observation_count)) %>% 
+  arrange(desc(total)) 
+
+```
+Extension.
+#2.1
+Q1:
+```{r}
+customer_id <- inner_join(card, customer, by = "cust_id")
+customer_id
+
+transaction_id <- inner_join(fraud, transaction, by = "transaction_id")
+transaction_id
+
+final_data <- inner_join(customer_id, transaction_id, 
+                         by = c("card_number" = "credit_card_id"))
+final_data
+                         
+```
+Q2:
+```{r}
+exam <- read_csv("data/exam_scores.csv")
+exam
+```
+```{r}
+exam %>% 
+  pivot_longer(cols = starts_with("exam"),
+              names_to = "exam_question",
+               values_to = "score") %>% 
+  separate(col = exam_question, into = c("exam", "question_number"), 
+           sep = "Q") %>% 
+  select(-exam)
+```
+
+```{r}
+exam %>% 
+  pivot_longer(cols = starts_with("exam"),
+              names_to = "exam_question",
+               values_to = "score") %>% 
+  separate(col = exam_question, into = c("exam", "question_number"), 
+           sep = "_") %>% 
+  select(-exam) %>% 
+  mutate(question_number = recode(question_number, "Q1" = "1", 
+                                  "Q2" = "2", "Q3" = "3", "Q4" = "4","Q5" = "5",
+                                  "Q6" = "6","Q7" = "7","Q8" = "8","Q9" = "9",
+                                  "Q10" = "10"))
+```
+
+```{r}
+exam_scores <- read_csv("data/exam_scores.csv")
+
+exam_scores_long <- exam_scores %>% 
+  pivot_longer(exam_Q1:exam_Q10, names_to = "exam_question", values_to = "score") 
+
+exam_scores_long %>% 
+  separate(exam_question, sep = "Q", into = c("extra_column", "exam_question")) %>% 
+  select(-extra_column)
+```
+

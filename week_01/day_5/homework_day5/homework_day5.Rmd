@@ -1,0 +1,149 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+books <- read_csv("data/books.csv")
+books
+```
+
+```{r}
+glimpse(books)
+```
+```{r}
+sum(is.na(books))
+```
+Remove all na.
+```{r}
+books <- na.exclude(books)
+```
+```{r}
+names(books)
+```
+
+Find the best authors.
+```{r}
+best_authors <- books %>% 
+  select(authors, average_rating) %>% 
+  group_by(authors) %>% 
+  summarise(best = median(average_rating)) %>% 
+  arrange(desc(best)) %>% 
+  head(n = 100)
+  
+best_authors
+```
+Find the most popular publisher.
+```{r}
+best_publisher <- books %>% 
+  select(publisher, average_rating) %>% 
+  group_by(publisher) %>% 
+  summarise(best_p = median(average_rating)) %>% 
+  arrange(desc(best_p))
+
+best_publisher
+```
+Calculate which publisher has the most books.
+```{r}
+most_books <- books %>% 
+  select(publisher, bookID) %>% 
+  group_by(publisher) %>% 
+  mutate(total = bookID - bookID + 1) %>% 
+  count(total) %>% 
+  arrange(desc(n))
+  
+most_books
+
+```
+```{r}
+unique(books$language_code)
+```
+```{r}
+books_language <- books %>% 
+  select(language_code, bookID) %>% 
+  mutate(language_code = recode(language_code, "en-GB" = "eng", "en-CA" = "eng",
+                                "en-US" = "eng"))
+```
+Most frequent language used.
+```{r}
+books_language %>% 
+  select(language_code, bookID) %>% 
+  group_by(language_code) %>% 
+  mutate(total_l = bookID - sbookID + 1) %>% 
+  count(total_l) %>% 
+  arrange(desc(n))
+
+```
+The latest publication date.
+```{r}
+books %>% 
+  select(publication_date) %>% 
+  slice_max(publication_date)
+```
+The latest publication date.
+```{r}
+books %>% 
+  select(publication_date) %>% 
+  slice_min(publication_date)
+```
+Find the best book (title). 
+
+```{r}
+best_book <- books %>% 
+  select(title, average_rating) %>% 
+  group_by(title) %>% 
+  summarise(best = median(average_rating)) %>% 
+  arrange(desc(best)) %>% 
+  head(n = 100)
+  
+best_book
+```
+Books with the most ratings count.
+```{r}
+books %>% 
+  select(title, ratings_count) %>% 
+  arrange(desc(ratings_count))
+```
+```{r}
+books %>% 
+  select(title, text_reviews_count) %>% 
+  arrange(desc(text_reviews_count))
+```
+```{r}
+books %>% 
+  select(bookID, title) %>% 
+  sample_n(1)
+```
+
+```{r}
+books <- books %>%
+  mutate(
+    language = recode(language_code,
+                  “eng” = “English”,
+                  “en-US” = “English (United States)“,
+                  “en-GB” = “English (United Kingdom”,
+                  “en-CA” = “English (Canada)“,
+                  “fre” = “French”,
+                  “spa” = “Spanish”,
+                  “mul” = “Multiple Languages”,
+                  “grc” = “Ancient Greek”,
+                  “enm” = “Middle English”,
+                  “ger” = “German”,
+                  “jpn” = “Japanese”,
+                  “ara” = “Arabic”,
+                  “nl” = “Dutch”,
+                  “zho” = “Chinese”,
+                  “lat” = “Latin”,
+                  “por” = “Portuguese”,
+                  “srp” = “Serbian”,
+                  “ita” = “Italian”,
+                  “glg” = “Galician”,
+                  “wel” = “Welsh”,
+                  “swe” = “Swedish”,
+                  “nor” = “Norwegian”,
+                  .default = “Other Language”)
+)
