@@ -83,6 +83,58 @@ FROM employees AS e left JOIN dsa ON dsa.department = e.department
 WHERE e.department = 'Legal';
 
 
+WITH biggest_dept(name, avg_salary, avg_fte_hours) AS (
+  SELECT 
+     department,
+     AVG(salary),
+     AVG(fte_hours)
+  FROM employees
+  GROUP BY department
+  ORDER BY COUNT(id) DESC NULLS LAST
+  LIMIT 1
+)
+SELECT
+  e.id,
+  e.first_name,
+  e.last_name, 
+  e.salary / bd.avg_salary AS salary_over_dept_avg,
+  e.fte_hours / bd.avg_fte_hours AS fte_hours_over_dept_avg
+FROM employees AS e CROSS JOIN biggest_dept AS bd
+WHERE department = bd.name;
+
+SELECT 
+	id, 
+	first_name, 
+	last_name, 
+	salary,
+	fte_hours,
+	department,
+	salary/AVG(salary) OVER () AS ratio_avg_salary,
+	fte_hours/AVG(fte_hours) OVER () AS ratio_fte_hours
+FROM employees
+WHERE department = (
+	SELECT
+	department
+FROM employees 
+GROUP BY department
+ORDER BY COUNT(id) DESC
+LIMIT 1);
+WITH biggest_dept(name, avg_salary, avg_fte_hours) AS (
+	SELECT
+		department,
+		AVG(salary),
+		AVG(fte_hours)
+	FROM employees 
+	GROUP BY department
+	ORDER BY COUNT(id) DESC NULLS LAST
+	LIMIT 1
+)
+SELECT 
+	*
+FROM employees AS e
+INNER JOIN biggest_dept AS db
+ON e.department = db.name; 
+
 -----Extension-----
 ----Q1----
 SELECT first_name, count(id) AS number_of_people
@@ -100,10 +152,23 @@ FROM employees
 SELECT e.first_name, e.last_name, e.email, e.start_date, 
 	employees_committees.committee_id, now() - start_date AS time_at_work 
 FROM employees AS e left JOIN employees_committees 
-ON e.id = employees_committees.id 
+ON e.id = employees_committees.employee_id 
 WHERE employees_committees.committee_id = 3
-ORDER BY time_at_work DESC;
+ORDER BY time_at_work DESC NULLS LAST;
 
+
+SELECT 
+  e.first_name, 
+  e.last_name, 
+  e.email, 
+  e.start_date
+FROM 
+employees AS e INNER JOIN employees_committees AS ec
+ON e.id = ec.employee_id
+INNER JOIN committees AS c
+ON ec.committee_id = c.id
+WHERE c.name = 'Equality and Diversity'
+ORDER BY e.start_date ASC NULLS LAST;
 ---Q4---
 
 SELECT count(DISTINCT ec.employee_id), 
@@ -115,6 +180,18 @@ ON e.id = ec.employee_id
 GROUP BY salary_class;
 
 
+SELECT 
+  CASE 
+    WHEN e.salary < 40000 THEN 'low'
+    WHEN e.salary IS NULL THEN 'none'
+    ELSE 'high' 
+  END AS salary_class,
+  COUNT(DISTINCT(e.id)) AS num_committee_members
+FROM employees AS e INNER JOIN employees_committees AS ec
+ON e.id = ec.employee_id
+INNER JOIN committees AS c
+ON ec.committee_id = c.id
+GROUP BY salary_class;
 
 
 

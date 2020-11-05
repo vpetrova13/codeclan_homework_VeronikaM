@@ -42,6 +42,13 @@ employees <- employees %>%
 employees
 ```
 ```{r}
+SELECT 
+  *, 
+  CONCAT(first_name, ' ', last_name) AS full_name
+FROM employees
+```
+
+```{r}
 teams <- dbGetQuery(db_connection, 
                         statement = "SELECT * FROM teams;")
 
@@ -83,6 +90,12 @@ FROM employees
 WHERE email NOT LIKE '%@%' OR email IS NULL ;
 
 ```
+```{r}
+SELECT * 
+FROM employees
+WHERE email !~ '[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+' OR email IS NULL
+```
+
 Extension:
 Q9:
 ```{sql, connection = db_connection}
@@ -129,6 +142,28 @@ GROUP BY t.name, e.team_id
 
 
 ```
+```{sql, connection = db_connection}
+WITH counts_only_first_initial(team_name, num_only_first_initial) AS (
+  SELECT 
+    t.name,
+    COUNT(e.id)
+  FROM employees AS e LEFT JOIN teams AS t
+  ON e.team_id = t.id
+  WHERE e.first_name LIKE '_'
+  GROUP BY t.name
+)
+SELECT 
+  team_name,
+  num_only_first_initial
+FROM counts_only_first_initial
+WHERE num_only_first_initial = (
+  SELECT 
+    MAX(num_only_first_initial)
+  FROM counts_only_first_initial
+)
+```
+
+
 Q11:
 ```{r}
 positive_words <- c("great", "good", "happy", "content", "fulfilled", "fulfilling", "positive", "positives", "cheerful", "nice", "ambition", "ambitions", "ambitious", "progress", "joy", "fast", "achieve", "achieving", "achievements", "best", "better",  "unlimited", "pros", "competitive", "opportunity", "advancement", "friendly", "smart", "interesting", "challenging", "grow", "caring", "balance", "helpful", "advantage", "learning", "ethical", "responsible", "responsibilities")
@@ -178,5 +213,125 @@ total_score <- inner_join(clean_feedbacks, sentiment_words, by = c("message"="wo
   mutate(total_score_sum = sum(score))
 
 total_score
+```
+```{sql, connection = db_connection, output.var = "employees_teams_feedbacks"}
+SELECT 
+  e.*, 
+  f.message,
+  f.id AS message_id,
+  t.name AS team_name
+FROM employees AS e LEFT JOIN teams AS t
+ON e.team_id = t.id INNER JOIN feedbacks AS f
+ON f.employee_id = e.id
+```
+
+```{r}
+employees_teams_feedbacks <- employees_teams_feedbacks %>%
+  mutate(
+    message = str_to_lower(message),
+    message = str_remove_all(message, "[[:punct:]]"), # remove punctuation
+    message = str_squish(message), # all internal whitespace goes to single space
+    message = str_trim(message) # leading and trailing whitespace removed
+  )
+```
+```{r}
+message_scores <- employees_teams_feedbacks %>%
+  mutate(
+    word = str_split(message, " ")
+  ) %>%
+  unnest_longer(word) %>%
+  inner_join(sentiment_words, by = "word") %>%
+  group_by(message_id) %>%
+  summarise(score = sum(score))
+
+message_scores
+```
+
+```{r}
+employees_teams_feedbacks_scores <- employees_teams_feedbacks %>%
+  left_join(message_scores, by = "message_id") %>%
+  mutate(score = replace_na(score, 0))
+
+employees_teams_feedbacks_scores
+```
+```{r}
+employees_teams_feedbacks_scores %>%
+  filter(score == max(score)) %>%
+  select(team_name)
+```
+```{r}
+employees_teams_feedbacks_scores %>%
+  filter(score == min(score)) %>%
+  select(team_name)
+```
+Base R solution 
+
+```{r}
+clean_message <- function(message){
+  message <- tolower(message)
+  message <- gsub(message, pattern = "[[:punct:]]", replacement = "")
+}
+```
+
+```{r}
+
+score_message <- function(message, positive_words, negative_words){
+  message_words <- unlist(strsplit(message, split = " ", fixed = TRUE))
+  message_score <- 0
+  
+  for (word in positive_words){
+    message_score <- message_score + sum(message_words == word)
+  }
+  
+  for (word in negative_words){
+    message_score <- message_score - sum(message_words == word)
+  }
+  
+return(message_score)
+}
+```
+
+Get our starting tibble:
+```{sql, connection = db_connection}
+SELECT 
+  e.*, 
+  f.message,
+  f.id AS message_id,
+  t.name AS team_name
+FROM employees AS e LEFT JOIN teams AS t
+ON e.team_id = t.id INNER JOIN feedbacks AS f
+ON f.employee_id = e.id
+```
+
+```{r}
+# go through each message in employees_teams_feedbacks, clean and score it
+score <- numeric()
+for (message in employees_teams_feedbacks[, 'message']){
+  message <- clean_message(message)
+  message_score <- score_message(message, positive_words, negative_words)
+  score <- c(score, message_score)
+}
+
+# add the scores 
+employees_teams_feedbacks['score'] <- score
+employees_teams_feedbacks
+
+```
+
+```{r}
+selector <- employees_teams_feedbacks[, 'score'] == max(employees_teams_feedbacks[, 'score']) 
+mostpos_employees_teams <- employees_teams_feedbacks[selector, "team_name"]
+mostpos_employees_teams
+```
+```{r}
+selector <- employees_teams_feedbacks[, 'score'] == min(employees_teams_feedbacks[, 'score']) 
+mostneg_employees_teams <- employees_teams_feedbacks[selector, "team_name"]
+mostneg_employees_teams
+```
+
+
+
+```{r}
+dbDisconnect(conn = db_connection)
 ```
 
