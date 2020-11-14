@@ -1,0 +1,52 @@
+---
+title: "disaster_data_analysis"
+author: "VM"
+date: "14/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+disasters_data <- read_csv("clean_disaster_data.csv")
+```
+## What was the greatest disaster of all time by total deaths?
+```{r}
+disasters_data %>%  
+  arrange(desc(total_deaths)) %>% 
+  head(1)
+```
+## Which country has had the highest total people affected by disasters?
+```{r}
+disasters_data %>% 
+  group_by(country_name) %>% 
+  summarise(high = sum(total_affected, na.rm = TRUE)) %>% 
+  arrange(desc(high)) %>% 
+  head(1)
+  
+```
+## What are the top 5 countries for total number of disasters?
+```{r}
+disasters_data %>% 
+  group_by(country_name) %>% 
+  summarise(total = n()) %>% 
+  arrange(desc(total)) %>% 
+  head(5)
+```
+## What is the greatest disaster in the last 5 years of the data, by total deaths?
+```{r}
+disasters_data %>% 
+  filter(year >= 2010) %>% 
+  arrange(desc(total_deaths))
+```
+## What were the top 10 years that had the most people dying from earthquakes?
+```{r}
+disasters_data %>% 
+  filter(disaster_type == "earthquake") %>% 
+  slice_max(order_by = total_deaths, n = 10) %>% 
+  distinct(year)
+```
+

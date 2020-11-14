@@ -1,0 +1,25 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+beer_data <- read_delim("data/beer.txt", delim = ";")
+```
+## Find all the observations where the carbohydrates are missing.
+```{r}
+beer_data %>% 
+  filter(is.na(carbohydrates))
+```
+## Find all the observations where the brand is missing.
+```{r}
+beer_data %>% 
+  filter(is.na(brand))
+```
+## What is different about the observations missing carbohydrates and the observations missing brand? To clean the data should be drop the rows missing brand or the rows missing carbohydrates?
+
+Where brand is missing, almost all data is missing as well, thus can be easily dropped.
+Where carbohydrates missed, there are still valuable information of brand, brewer, etc.
+
+

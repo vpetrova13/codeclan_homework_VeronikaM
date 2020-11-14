@@ -1,0 +1,46 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+inmates_data <- read_tsv("data/inmates.tsv")
+```
+## Change the ‘M’/‘F’ values in gender to be ‘Male’/‘Female’.
+```{r}
+inmates_data %>% 
+  mutate(gender = case_when(gender == "M" ~ "Male",
+                            gender == "F" ~ "Female"))
+```
+## For the race variable, everything is in capital letters, change each level to title case. Also combine ‘AMER IND’ and ‘ASIAN’ into an ‘Other’ category.
+```{r}
+inmates_data  %>% 
+  mutate(race = str_to_title(race)) %>% 
+  mutate(race = recode(race, "Amer Ind" = "Other",
+                       "Asian" = "Other"))
+```
+## Make a new variable bond_level which is High whenever the bond for an inmate is above $1,000,000 and Normal otherwise.
+```{r}
+bond_level_data <- inmates_data %>% 
+  mutate(bond_level = case_when(bond_amount > 1000000 ~ "High",
+                                 TRUE ~ "Normal"))
+bond_level_data
+```
+## How many inmates have a high bond level?
+```{r}
+bond_level_data %>% 
+  filter(bond_level == "High") %>% 
+  summarise(total = n())
+```
+## Modify the detainer variable so that NONE, IMIGRATION and FEDERAL are in title case and all other levels are set to Other.
+```{r}
+bond_level_data %>% 
+  mutate(detainer = str_to_title(detainer)) %>% 
+  mutate(detainer = recode(detainer, "Other State" = "Other",
+                           "Special Parole" = "Other",
+                           "State Of Ct" = "Other",
+                           "Do Not Release" = "Other"))
+```
+
+
