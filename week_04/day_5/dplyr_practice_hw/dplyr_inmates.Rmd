@@ -13,6 +13,12 @@ inmates_data %>%
   mutate(gender = case_when(gender == "M" ~ "Male",
                             gender == "F" ~ "Female"))
 ```
+```{r}
+inmates_data %>% 
+  mutate(gender = if_else(gender == 'M', 'Male', 'Female'))
+
+```
+
 ## For the race variable, everything is in capital letters, change each level to title case. Also combine ‘AMER IND’ and ‘ASIAN’ into an ‘Other’ category.
 ```{r}
 inmates_data  %>% 

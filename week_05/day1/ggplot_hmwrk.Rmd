@@ -1,0 +1,147 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(scales)
+library(CodeClanData)
+backpack
+```
+Question 1.
+Load in the libraries you need, and look at the backpack data. Take note of variable names and dimensions.
+```{r}
+dim(backpack)
+names(backpack)
+```
+Question 2.
+What is the distribution of backpack weights that students are carrying? Choose an appropriate graph to show the distribution.
+```{r}
+ggplot(backpack) +
+  aes(backpack_weight) +
+  geom_bar(fill = "blue") +
+   labs(
+    x = "\n Backpack weight",
+    y = "Count",
+    title = "Weight of backpacks distribution")
+```
+It can be seen that most of it is around 10. There is an outlier which is around 35.
+Also the graph is skewed to right.
+
+Question 3.
+Are there differences in backpack weight between sex?
+```{r}
+ggplot(backpack) +
+  aes(backpack_weight, fill = sex) +
+  geom_bar() +
+   labs(
+    x = "\n Backpack weight",
+    y = "Count",
+    title = "Weight of backpacks distribution by sex") +
+  facet_wrap(~sex)
+```
+Female's graph is more skewed to right which means usually female's backpacks are lighter than males ones. The most frequent weght for males is more than 10.
+
+Question 4.
+What is the relationship between body weight and backpack weight?
+```{r}
+ggplot(backpack) +
+  aes(x = body_weight, y = backpack_weight) +
+  geom_point() +
+   labs(
+    x = "\n Body weight",
+    y = "Backpack weight",
+    title = "Relationship between body weight and backpack weight") +
+  geom_smooth(method = lm, se = FALSE)
+```
+There is no relationship between body weight and backpack one. Point are distributed around average values.
+
+Question 5.
+Is this relationship different between men and women? Choose an appropriate plot and interpret your findings.
+```{r}
+ggplot(backpack) +
+  aes(x = body_weight, y = backpack_weight, fill = sex) +
+  geom_point() +
+   labs(
+    x = "\n Body weight",
+    y = "Backpack weight",
+    title = "Relationship between body weight and backpack weight") +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap(~sex)
+```
+Same. There is no relationship between body weight and backpack one between different genders. Point are distributed around average values.
+
+Question 6.
+What proportion of students report back pain?
+```{r}
+backpack <-backpack %>% 
+  mutate(proportion = sum(back_problems))
+
+ggplot(backpack) +
+  aes(x = back_problems, fill = back_problems) +
+  geom_bar(position = "fill", show.legend = FALSE) +
+  labs(
+    x = "\n Back problems",
+    y = "Count",
+    title = "Proportion of back problems around students") 
+```
+Question 7.
+Is this proportion different between men and women?
+```{r}
+backpack <-backpack %>% 
+  mutate(proportion = sum(back_problems))
+
+ggplot(backpack) +
+  aes(x = back_problems, fill = sex) +
+  geom_bar() +
+  labs(
+    x = "\n Back problems",
+    y = "Count",
+    title = "Proportion of back problems around students") 
+```
+Question 8.
+
+Now you’ve investigated your data separately, create plots to describe the relationship between backpack weight, body weight, gender and reported backpain.
+
+Try both backpack_weight and body_weight as well as the ratio.
+
+Hint: faceting would be useful here.
+```{r}
+ggplot(backpack) +
+  aes(x = backpack_weight, y = body_weight) +
+  geom_point() +
+   labs(
+    x = "\n Body weight",
+    y = "Backpack weight",
+    title = "Relationship between body weight and backpack weight") +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap(sex ~ back_problems)
+```
+Extensions
+Question 1.
+Does reported backpain differ across the year groups? Ignore year 0 in your data.
+```{r}
+ggplot(backpack) +
+  aes(x = year, fill = back_problems) +
+  geom_bar() +
+  xlim(0, 7) +
+  labs(
+    x = "\n Year",
+    y = "Count",
+    title = "Backpain across year")
+```
+
+Question 2.
+Is there a difference between how heavy the bags those in different years carry?
+```{r}
+ggplot(backpack) +
+  aes(x = backpack_weight, fill = year) +
+  geom_bar()  +
+  labs(
+    x = "\n Backpack weight",
+    y = "Count",
+    title = "Backpack weight across year")
+```
+
+
