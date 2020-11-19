@@ -30,13 +30,13 @@ ui <- fluidPage(
 server <- function(input, output) {
    output$cars_plot <- renderPlot({
         ggplot(cars) +
-        aes(x = input$slider1, y = input$slider2) +
+        aes(x = speed, y = dist) +
         geom_col(fill = "sky blue") +
         theme_light() +
         labs(x = "Speed",
              y = "Distance") +
-           ylim(NA, 130) +
-           xlim(0, 30)
+           ylim(NA, input$slider2) +
+           xlim(NA, input$slider1)
     })
 }
 shinyApp(ui = ui, server = server)
