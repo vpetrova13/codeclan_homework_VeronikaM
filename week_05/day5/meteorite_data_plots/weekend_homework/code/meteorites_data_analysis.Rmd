@@ -1,0 +1,157 @@
+---
+title: "meteorites_data_analysis"
+author: "VM"
+date: "31/10/2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(janitor)
+library(scales)
+library(maps)
+```
+Read clean data.
+```{r}
+clean_data_meteorites <- read_csv("../data/clean_meteorites.csv")
+```
+```{r}
+clean_data_meteorites
+class(clean_data_meteorites)
+
+clean_data_meteorites <- as.data.frame(clean_data_meteorites) %>% clean_names()
+
+clean_data_meteorites
+```
+10 largest meteorites.
+```{r}
+clean_data_meteorites %>%
+  select(name, mass_g, year) %>% 
+  arrange(desc(mass_g))  %>% 
+  slice_max(order_by = mass_g, n=10) %>% 
+  ggplot() +
+  aes(x = reorder(name, -mass_g), y = mass_g, fill = year) +
+  geom_col() +
+  theme_light() +
+  scale_y_continuous(label = scales::comma) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    title = "The 10 largest meteorites",
+    y = "Mass (g)",
+    x = "Name"
+  ) 
+```
+Average mass of different meteorites.
+```{r}
+clean_data_meteorites %>% 
+  filter(fall == "fell") %>% 
+  summarise(avg_mass_fell = mean(mass_g))
+```
+```{r}
+clean_data_meteorites %>% 
+  filter(fall == "found") %>% 
+  summarise(avg_mass_found = mean(mass_g))
+```
+Meteorites per year since 2000.
+```{r}
+clean_data_meteorites %>% 
+  filter(year >= 2000) %>% 
+  group_by(year) %>% 
+  summarise(total_per_year = n_distinct(name)) %>% 
+  arrange(year) %>% 
+  ggplot() +
+  aes(x = year, y = total_per_year) +
+  geom_col(fill = "sky blue") +
+  theme_light() +
+  labs(
+    title = "Total number of meteorites per year since 2000",
+    x = "\n Year", y = "Number of meteorites"
+  ) + scale_x_continuous(breaks = c(2000:2013)) 
+```
+```{r}
+clean_data_meteorites %>% 
+  summarise_all(funs(sum(is.na(.))))
+```
+Biggest meteorite found per year.
+```{r}
+clean_data_meteorites %>% 
+  drop_na() %>% 
+  filter(fall == "found") %>%
+  group_by(year) %>% 
+  summarise(big_per_year = max(mass_g)) %>% 
+  arrange(year) %>% 
+  ggplot() +
+  aes(x = year, y = big_per_year) +
+  geom_col(fill = "sky blue") +
+  theme_light() +
+  labs(
+    title = "Biggest found meteorite per year",
+    x = "\n Year", y = "Mass (g)"
+  ) +
+  scale_y_continuous(label = scales::comma)
+
+```
+Biggest meteorite fell per year.
+```{r}
+clean_data_meteorites %>% 
+  drop_na() %>% 
+  filter(fall == "fell") %>%
+  group_by(year) %>% 
+  summarise(big_per_year = max(mass_g)) %>% 
+  arrange(year) %>% 
+  ggplot() +
+  aes(x = year, y = big_per_year) +
+  geom_col(fill = "sky blue") +
+  theme_light() +
+  labs(
+    title = "Biggest fell meteorite per year",
+    x = "\n Year", y = "Mass (g)"
+  ) +
+  scale_y_continuous(label = scales::comma)
+
+```
+The 10 biggest meteorites.
+```{r}
+earth_map <- map_data("world")
+
+clean_data_meteorites %>% 
+  drop_na() %>% 
+  slice_max(mass_g, n=10) %>% 
+  arrange() %>% 
+  ggplot() +
+  geom_polygon(data = earth_map, aes(x = long, y = lat, group = group),
+               fill = "grey", alpha = 0.5) +
+  geom_point(aes(x = longitude, y = latitude)) +
+  coord_cartesian()
+```
+The 10 smallest meteorites.
+```{r}
+clean_data_meteorites %>% 
+  drop_na() %>% 
+  slice_min(mass_g, n=10) %>% 
+  arrange() %>% 
+  ggplot() +
+  geom_polygon(data = earth_map, aes(x = long, y = lat, group = group),
+               fill = "grey", alpha = 0.5) +
+  geom_point(aes(x = longitude, y = latitude)) +
+  coord_cartesian()
+```
+Median latitude and longitutde.
+```{r}
+clean_data_meteorites %>% 
+  select(latitude, longitude) %>% 
+  summarise(lat_md = median(latitude), long_md = median(longitude)) 
+
+```
+Change g to kg.
+```{r}
+clean_data_meteorites %>% 
+  mutate(mass_kg = mass_g/1000) %>% 
+  ggplot() +
+  geom_polygon(data = earth_map, aes(x = long, y = lat, group = group),
+               fill = "grey", alpha = 0.5) +
+  geom_point(aes(x = longitude, y = latitude, color = year, size = mass_kg, 
+                 alpha = 0.3)) +
+  coord_cartesian() + 
+  guides( alpha = FALSE)
+```
+

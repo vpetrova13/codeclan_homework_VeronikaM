@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(CodeClanData)
+library(scales)
+
+view(game_sales)
+names(game_sales)
+```
+
+```{r}
+game_sales_rating <- game_sales %>% 
+  mutate(rating = case_when(rating == "E" ~ "Everyone",
+                            rating == "E10+" ~ "Everyone 10+",
+                            rating == "M" ~ "Mature",
+                            rating == "T" ~ "Teen"))
+```
+
+
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = publisher) +
+  geom_bar(fill = "sky blue") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = reorder(genre, -user_score, FUN = sum), y = user_score)+
+  geom_col(color = "sky blue")  +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = user_score, y = critic_score,  color = sales) +
+  geom_point(alpha = 0.4) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_light()
+```
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = rating) +
+  geom_bar(fill = "sky blue") +
+  theme_light() 
+```
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = platform)+
+  geom_bar(fill = "sky blue")  +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+game_sales %>% 
+  filter(platform == "PS4") %>% 
+  ggplot() +
+  aes(x = reorder(genre, -user_score, FUN = sum), y = user_score)+
+  geom_col(color = "sky blue", fill = "sky blue")  +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  labs(title = "Most Popular Genres",
+       x = "Genre",
+       y = "User Score")
+```
+
+
+
