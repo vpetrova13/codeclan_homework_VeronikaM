@@ -1,0 +1,13 @@
+name: game_chooser_app
+title: game_chooser_app
+username:
+account: veronika13
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3286760
+bundleId: 3894954
+url: https://veronika13.shinyapps.io/game_chooser_app/
+when: 1606136211.83311
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app.R|plots_game_sales.nb.html|plots_game_sales.Rmd

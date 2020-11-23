@@ -3,11 +3,13 @@ library(CodeClanData)
 library(shiny)
 library(DT)
 library(shinythemes)
+library(rsconnect)
+
 game_sales
 
 ui <- fluidPage(
   theme = shinytheme("flatly"),
-  titlePanel("Game Chooser"),
+  titlePanel("The Game Chooser"),
   
   sidebarLayout(
     sidebarPanel(
@@ -57,23 +59,28 @@ server <- function(input, output) {
   })
   
   filtered_data <- eventReactive(input$update, {
-    game_sales %>%
+    data <- game_sales %>%
       select(name, platform, genre, year_of_release, user_score, rating) %>% 
       filter(platform == input$platform) %>%
-      filter(genre == input$genre) %>% 
+      filter(genre == input$genre) 
       
-      if (input$age == "6 - 9 years old") {
+     if (input$age == "6 - 9 years old") {
+        data_filtered <- data %>% 
           filter(rating == "E") }  
     
     else if (input$age == "10 - 12 years old") {
-        filter(rating == "E10+") }  
+      data_filtered <- data %>% 
+        filter(rating == "E10+" |
+                 rating == "E") }  
     
     else if (input$age == "13 - 17 years old") {
-        filter(rating == "T") } 
+      data_filtered <- data %>% 
+        filter(rating != "M") } 
     
     else {
-        filter(rating == "M") } 
+      data_filtered <- data  } 
       
+    data_filtered
   })
   
   output$table <- DT::renderDataTable({

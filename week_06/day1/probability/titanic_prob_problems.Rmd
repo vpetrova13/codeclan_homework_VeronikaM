@@ -1,0 +1,81 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(prob)
+library(gtools)
+library(tidyverse)
+```
+```{r}
+titanic <- read_csv("data/titanic.csv")
+head(titanic)
+```
+
+```{r}
+titanic <- titanic %>% 
+  mutate(crew = case_when(class == "1st" ~ FALSE,
+                          class == "2nd" ~ FALSE,
+                          class == "3rd" ~FALSE,
+                          TRUE ~ TRUE))
+
+titanic
+```
+Calculate the conditional probabilities prob( survived ∣ crew )
+and prob( survived ∣ passenger )
+```{r}
+prob_survived_crew <- titanic %>% 
+  dplyr::filter(survived == "yes", crew == TRUE) %>% 
+  summarise(prob = n() / nrow(titanic))
+
+prob_survived_crew
+```
+ prob(A | B) = prob(A AND B) / prob(B) (conditional probability)
+ prob(survive | crew) = prob(A and B) / prob(B)
+```{r}
+prob_crew <- titanic %>% 
+  dplyr::filter( crew == TRUE) %>% 
+  summarise(prob = n() / nrow(titanic))
+
+prob_crew
+```
+```{r}
+prob_survived_crew / prob_crew
+```
+#Passengers
+```{r}
+prob_survived_pas <- titanic %>% 
+  dplyr::filter(survived == "yes", crew == FALSE) %>% 
+  summarise(prob = n() / nrow(titanic))
+
+prob_survived_pas
+```
+```{r}
+prob_pas <- titanic %>% 
+  dplyr::filter(crew == FALSE) %>% 
+  summarise(prob = n() / nrow(titanic))
+
+prob_pas
+```
+```{r}
+prob_survived_pas / prob_pas
+```
+#Calculate in one step:
+```{r}
+prob_surv_given_crew = titanic %>%
+  dplyr::filter( crew == TRUE) %>%
+  summarise(prob = sum(survived == "yes") / n())
+
+prob_surv_given_crew
+```
+```{r}
+prob_surv_given_pas = titanic %>%
+  dplyr::filter(crew == FALSE) %>%
+  summarise(prob = sum(survived == "yes") / n())
+
+prob_surv_given_pas
+```
+
+
+ 

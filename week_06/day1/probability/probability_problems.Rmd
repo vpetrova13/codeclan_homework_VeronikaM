@@ -1,0 +1,226 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(prob)
+library(gtools)
+library(tidyverse)
+```
+
+1. If I roll a six-sided dice once, what is the probability of getting a number less than 5?
+```{r}
+dice_one <- rolldie(1)
+
+dice_one %>% 
+  dplyr::filter(X1 < 5) %>% 
+  summarise(prob = n() / nrow(dice_one))
+```
+2. How many outcomes are there in the sample space of an experiment in which we toss three dice?
+```{r}
+dice_three <- rolldie(3)
+
+dice_three
+
+dice_perm <- as_tibble(
+  permutations(
+    n = 6,
+    r = 3,
+    v = c(1:6),
+    repeats.allowed = TRUE
+  )
+)
+
+nrow(dice_perm)
+```
+3. In an experiment where we roll four dice:
+
+how many outcomes are in the event total_equals_5_6_7 (i.e. the total of the four dice equals 5
+, 6
+ or 7
+)?
+what is the probability of this event?
+what assumptions do we apply in answering part ii?
+```{r}
+dice_four <- rolldie(4) %>% 
+  mutate(row = row_number())
+
+dice_four
+```
+```{r}
+total_equals_5_6_7 <- dice_four %>% 
+  mutate(sum = X1 + X2 + X3 +X4) %>% 
+  dplyr::filter(sum >= 5, sum <= 7)
+
+total_equals_5_6_7
+```
+```{r}
+prob_total_equals_567 <- nrow(total_equals_5_6_7) / nrow(dice_four)
+prob_total_equals_567
+```
+4. Five chairs are placed in a row in a room, along with five people of differing height. The people sit down randomly on the chairs. What is the probability that they sit in order of decreasing height, left to right?
+```{r}
+five_chairs <-  as_tibble(
+  permutations(
+    n = 5,
+    r = 5,
+    v = 1:5,
+    repeats.allowed = FALSE
+  )
+)
+
+five_chairs
+1/nrow(five_chairs)
+```
+5. I roll six dice:
+
+what is the probability I see the numbers 6, 5, 4, 3, 2 and 1 in order on the dice, left to right?
+what is the probability I see one each of the numbers 6, 5, 4, 3, 2 and 1 on the dice regardless of order?
+[Hint have a look at the isin() function in the prob package. For example, to filter all rows containing 6
+, 1
+, 2
+ in that order, you could use isin(., c(6, 1, 2), ordered = TRUE)]
+```{r}
+six_dice <- rolldie(6) %>% 
+  pull
+
+six_dice_row <- as_tibble(
+  permutations(
+    n = 6,
+    r = 6,
+    v = six_dice,
+    repeats.allowed = TRUE
+  )
+)
+
+six_dice_row
+  
+```
+```{r}
+in_order <- six_dice_row %>% 
+  isin(., c(6, 5, 4, 3, 2, 1), ordered = TRUE) 
+
+sum(in_order)/nrow(six_dice_row)
+```
+```{r}
+not_order <- six_dice_row %>% 
+  isin(., c(6, 5, 4, 3, 2, 1), ordered = FALSE) 
+
+sum(not_order)/nrow(six_dice_row)
+```
+6. If I draw a single card from a 52-card deck, and it is black, what is the probability that its suit is spades? 
+ prob(A | B) = prob(A AND B) / prob(B) (conditional probability)
+```{r}
+prob_card_both <- 13/52
+prob_card <- prob_card_both/ (26/52)
+prob_card
+```
+```{r}
+cards <- cards(jokers = FALSE)
+cards
+
+prob_card <- cards %>% 
+  dplyr::filter(suit == "Spade") %>% 
+  summarise(prob = n() / nrow(cards))
+
+prob_card
+```
+7. Eight patients: Alice, Bob, Carmen, Dinesh, Ella, Fergus, Gianna and Henry are waiting to see a doctor, but only five appointment slots are left today.
+```{r}
+patients <- c("Alice", "Bob", "Carmen", "Dinesh", "Ella", "Fergus", "Gianna", "Henry")
+
+patiens_app <- as_tibble(
+  permutations(
+    n = 8,
+    r = 5,
+    v = patients,
+    repeats.allowed = FALSE
+  )
+)
+
+patiens_app
+```
+What is the probability of Gianna and Danesh both being seen today?
+```{r}
+prob_both <- patiens_app %>% 
+  isin(., c("Gianna", "Dinesh"), ordered = FALSE) 
+
+sum(prob_both) / nrow(patiens_app)
+```
+What is the probability of Gianna being seen before Dinesh today?
+```{r}
+prob_before <- patiens_app %>% 
+  isin(., c("Gianna", "Dinesh"), ordered = TRUE) 
+
+sum(prob_before) / nrow(patiens_app)
+```
+ Carmen and Henry have now been triaged as high priority and will be seen in the first two available slots, although their order hasn’t yet been determined. In how many different orders can the patients now be seen?
+```{r}
+patients <- c("Alice", "Bob", "Carmen", "Dinesh", "Ella", "Fergus", "Gianna", "Henry")
+
+patients_high <- c("Carmen", "Henry")
+
+patients_low <- c("Alice", "Bob", "Dinesh", "Ella", "Fergus", "Gianna")
+
+
+patiens_high <- as_tibble(
+  permutations(
+    n = 2,
+    r = 2,
+    v = patients_high,
+    repeats.allowed = FALSE
+  )
+)
+
+patiens_high
+
+patiens_low <- as_tibble(
+  permutations(
+    n = 6,
+    r = 6,
+    v = patients_low,
+    repeats.allowed = FALSE
+  )
+)
+
+patiens_low
+```
+```{r}
+patiens_high <- patiens_high %>% 
+  mutate(rowname = row_number()) %>% 
+  rename(high = V1,
+         high2 = V2)
+
+patiens_low <- patiens_low %>% 
+  mutate(rowname = row_number())
+
+both <- merge(patiens_high, patiens_low, all.y = TRUE)
+both
+```
+8. If order is not significant, how many ways are there to select a 5 student quiz team from a group of 8 students?
+```{r}
+as_tibble(
+  permutations(
+    n = 8,
+    r = 5,
+    v = 1:8,
+    repeats.allowed = FALSE
+  )
+)
+```
+ 9. (harder) How would your answer for question 8 change if a team captain had to be selected for each team?
+```{r}
+
+```
+ 
+
+
+
+
+ 
+
+
+
+
+
