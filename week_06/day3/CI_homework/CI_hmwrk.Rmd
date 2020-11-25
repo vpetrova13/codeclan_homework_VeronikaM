@@ -1,0 +1,132 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(infer)
+
+ames <- read_csv("data/ames.csv") %>% clean_names()
+```
+Data exploring
+```{r}
+head(ames)
+dim(ames)
+glimpse(ames)
+```
+```{r}
+ames %>% 
+  select(lot_area) %>% 
+  ggplot() +
+  aes(x = lot_area) +
+  geom_histogram(aes(y = ..density..), col = "white", bins = 30) +
+  stat_function( fun = dnorm,
+    args = list(
+      mean = mean(ames$lot_area),
+      sd = sd(ames$lot_area)
+    ),
+    col = "red"
+  )
+```
+It is highly right skewed and there is no data below zero as it is area and the 
+lowest is zero which is impossible for area to be. Most data concentrated on the 
+lower numbers.
+
+Compute and visualise a bootstrap sampling distribution for the mean(lot_area) of the sold houses.
+```{r}
+boostrap_resample_200 <- ames %>% 
+  rep_sample_n(size = 200, replace = TRUE, reps = 5000) %>% 
+  summarise(
+    mean_lot_area = mean(lot_area),
+  )
+
+boostrap_resample_200
+
+boostrap_resample_200 %>% 
+  ggplot(aes(x = mean_lot_area)) +
+  geom_histogram(col = "white", bins = 30)
+```
+```{r}
+ames %>% 
+  summarise(mean_lot_area = mean(lot_area))
+```
+Use your bootstrap distribution to calculate a 95%
+ CI for mean(lot_area), and visualise it on the distribution
+```{r}
+infer_resample <- ames %>% 
+  specify(response = lot_area) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+infer_ci_95 <- infer_resample %>% 
+  get_ci(level = 0.95, type = "percentile")
+```
+
+```{r}
+infer_resample %>% 
+  visualise() +
+  shade_ci(endpoints = infer_ci_95)
+```
+
+You would like to know the mean(lot_area) of the sold houses with higher confidence. Calculate the 99%
+ CI for this variable (you can re-use your bootstrap distribution from above). Is it narrower or broader than the 95%
+ CI? Does that make sense?
+```{r}
+infer_ci_99 <- infer_resample %>% 
+  get_ci(level = 0.99, type = "percentile")
+```
+
+```{r}
+infer_resample %>% 
+  visualise() +
+  shade_ci(endpoints = infer_ci_99)
+```
+CI in 99% is broader than in 95%.
+```{r}
+infer_resample %>% 
+  filter(stat >= infer_ci_99$lower_ci, stat <= infer_ci_99$upper_ci) %>% 
+  summarise(mean = mean(stat))
+```
+Calculate the point estimate of the mean(lot_area)
+
+```{r}
+infer_resample %>% 
+  summarise(mean(stat))
+```
+Calculate a point estimate and 95%
+ CI for the proportion of houses in the data built before 1920. Does the number of reps you use matter? [Investigate reps from 200
+ up to 50000
+, memory of your laptop permitting]. 
+
+[Hint - the current implementation of calculate(stat = "prop") in infer is slow! You can get around this by treating the mean in this way: add a new column via mutate(before_1920 = as.numeric(year_built < 1920)) and then calculate(stat = "mean") on this new column]
+
+```{r}
+ames_before_1920 <- ames %>% 
+  mutate(before_1920 = as.numeric(year_built < 1920))
+
+ames_before_1920
+```
+```{r}
+infer_resample_1920 <- ames_before_1920 %>% 
+  specify(response = before_1920) %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+infer_ci_95_1920 <- infer_resample_1920 %>% 
+  get_ci(level = 0.95, type = "percentile")
+```
+
+```{r}
+infer_resample_1920 %>% 
+  visualise() +
+  shade_ci(endpoints = infer_ci_95_1920)
+```
+```{r}
+infer_resample_1920 %>% 
+  summarise(mean(stat))
+```
+
+
+

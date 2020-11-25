@@ -36,6 +36,11 @@ samsung_stats <- mobile %>%
 samsung_stats
 ```
 ```{r}
+samsung_stats_fitdistr <- MASS::fitdistr(x = samsung_ratings$rating, densfun = "normal")
+samsung_stats_fitdistr
+```
+
+```{r}
 mobile %>% 
   filter(brand == "Samsung") %>% 
   ggplot(aes(x = rating)) +
@@ -51,34 +56,60 @@ mobile %>%
 ```
 The graph is skewed to left so it does not provide a good model of these ratings.
 
+It’s a reasonable fit: the distribution is roughly bell-shaped. The main problems seem to be a larger number of ratings in the tails of the distribution than are predicted by the normal, at ratings 1
+, 2
+ and 5
+
 We can be more quantitative in comparing the distribution of top brand ratings with a normal distribution. You calculated the mean() and sd() of your distribution in an earlier question. Use these values to calculate the proportions of ratings within one-, two- and three standard deviations of the mean. Compare these proportions with those you expect for a normal distribution.
 ```{r}
-mobile %>%
+samsung_ratings <- mobile %>%
   select(brand, rating) %>% 
-  filter(brand == "Samsung") %>% 
-  filter(rating >= samsung_stats$mean - samsung_stats$sd) %>%
-  filter(rating <= samsung_stats$mean + samsung_stats$sd) %>%
-  summarise(prop_within_1sd = n() / nrow(mobile))
-```
-```{r}
-mobile %>%
-  select(brand, rating) %>% 
-  filter(brand == "Samsung") %>% 
-  filter(rating >= samsung_stats$mean - (2 *samsung_stats$sd)) %>%
-  filter(rating <= samsung_stats$mean + (2* samsung_stats$sd)) %>%
-  summarise(prop_within_2sd = n() / nrow(mobile))
+  filter(brand == "Samsung")
 ```
 
 ```{r}
 mobile %>%
   select(brand, rating) %>% 
   filter(brand == "Samsung") %>% 
-  filter(rating >= samsung_stats$mean - (3* samsung_stats$sd)) %>%
-  filter(rating <= samsung_stats$mean + (3* samsung_stats$sd)) %>%
-  summarise(prop_within_3sd = n() / nrow(mobile))
+  filter(rating >= samsung_stats$mean - samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + samsung_stats$sd) %>%
+  summarise(prop_within_1sd = n() / nrow(samsung_ratings))
+```
+```{r}
+mobile %>%
+  select(brand, rating) %>% 
+  filter(brand == "Samsung") %>% 
+  filter(rating >= samsung_stats$mean - 2 *samsung_stats$sd)%>%
+  filter(rating <= samsung_stats$mean + 2* samsung_stats$sd) %>%
+  summarise(prop_within_2sd = n() / nrow(samsung_ratings))
+```
+
+```{r}
+mobile %>%
+  select(brand, rating) %>% 
+  filter(brand == "Samsung") %>% 
+  filter(rating >= samsung_stats$mean - 3* samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + 3* samsung_stats$sd) %>%
+  summarise(prop_within_3sd = n() / nrow(samsung_ratings))
 ```
 After 3 sd it does not even cover half of rating which means that data is skewed 
 and there are outliers and distribution is not uniform.
+
+For a normal distribution, expect 68%
+ of values to fall within one standard deviation of the mean. Here, 79%
+ of ratings are within this range, so our distribution is slightly too central.
+
+Adding another standard deviation to either side should increase the proportion of values by 27%
+ to 95%
+ overall in a normal distribution. Our distribution adds 13%
+, going to 92%
+ overall, so there are too few values in the range from one- to two standard deviations.
+
+Finally, in a normal distribution, adding a further standard deviation to either side should increase the proportion of values by 4.7%
+ to 99.7%
+ overall. Our distribution adds 6%
+ to 98%
+, so this is pretty close.
 ```{r}
 qq <- mobile %>% 
   filter(brand == "Samsung")
@@ -86,6 +117,7 @@ qq <- mobile %>%
 qqnorm(qq$rating, pch = 1, frame = FALSE)
 qqline(qq$rating, col = "steelblue", lwd = 2)
 ```
+Here we see significant deviations from straight line in the tails, so the data is not very well approximated as normal.
 
 
 
