@@ -22,6 +22,12 @@ titanic <- titanic %>%
 
 titanic
 ```
+```{r}
+titanic <- titanic %>%
+  mutate(crew = class %in% c("engineering crew", "victualling crew", "restaurant staff", "deck crew"))
+
+```
+
 Calculate the conditional probabilities prob( survived ∣ crew )
 and prob( survived ∣ passenger )
 ```{r}
@@ -76,6 +82,16 @@ prob_surv_given_pas = titanic %>%
 
 prob_surv_given_pas
 ```
+```{r}
+library(janitor)
+titanic %>%
+  tabyl(crew, survived) %>%
+  adorn_totals(where = c("row", "col")) %>%
+  adorn_percentages(denominator = "all") %>%
+  adorn_rounding(digits = 4) %>%
+  adorn_title()
+```
+
 
 
  

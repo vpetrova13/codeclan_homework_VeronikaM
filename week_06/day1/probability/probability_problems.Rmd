@@ -117,14 +117,21 @@ prob_card <- prob_card_both/ (26/52)
 prob_card
 ```
 ```{r}
-cards <- cards(jokers = FALSE)
-cards
+S <- cards(jokers = FALSE)
 
-prob_card <- cards %>% 
-  dplyr::filter(suit == "Spade") %>% 
-  summarise(prob = n() / nrow(cards))
+S <- S %>%
+  mutate(black_card = suit == "Club" | suit == "Spade")
 
-prob_card
+S_spades_and_black <- S %>%
+  filter(black_card == TRUE & suit == "Spade")
+prob_spades_and_black <- nrow(S_spades_and_black) / nrow(S)
+
+S_black <- S %>%
+  filter(black_card == TRUE)
+prob_black <- nrow(S_black) / nrow(S)
+
+prob_spades_given_black <- prob_spades_and_black / prob_black
+prob_spades_given_black
 ```
 7. Eight patients: Alice, Bob, Carmen, Dinesh, Ella, Fergus, Gianna and Henry are waiting to see a doctor, but only five appointment slots are left today.
 ```{r}
@@ -178,7 +185,7 @@ patiens_high
 patiens_low <- as_tibble(
   permutations(
     n = 6,
-    r = 6,
+    r = 3,
     v = patients_low,
     repeats.allowed = FALSE
   )
@@ -187,21 +194,40 @@ patiens_low <- as_tibble(
 patiens_low
 ```
 ```{r}
-patiens_high <- patiens_high %>% 
-  mutate(rowname = row_number()) %>% 
+high_priority_patients <- c("Carmen", "Henry")
+S_high_priority <- as_tibble(permutations(n = 2, r = 2, v = high_priority_patients, repeats.allowed = FALSE))
+names(S_high_priority) <- c("appt1", "appt2")
+
+# second step is a 6P3 problem: permute 3 patients from 6.
+normal_priority_patients <- c("Alice", "Bob", "Dinesh", "Ella", "Fergus", "Gianna")
+S_normal_priority <- as_tibble(permutations(n = 6, r = 3, v = normal_priority_patients, repeats.allowed = FALSE))
+names(S_normal_priority) <-c("appt3", "appt4", "appt5")
+
+# merge these dataframes
+S <- merge(S_high_priority, S_normal_priority)
+# final answer
+nrow(S)
+```
+
+
+
+```{r}
+patiens_high <- patiens_high %>%  
   rename(high = V1,
          high2 = V2)
 
-patiens_low <- patiens_low %>% 
-  mutate(rowname = row_number())
+patiens_low <- patiens_low %>%
+  rename(low= V1,
+         low2 = V2,
+         low3 = V3)
 
-both <- merge(patiens_high, patiens_low, all.y = TRUE)
+both <- merge(patiens_high, patiens_low)
 both
 ```
 8. If order is not significant, how many ways are there to select a 5 student quiz team from a group of 8 students?
 ```{r}
 as_tibble(
-  permutations(
+  combinations(
     n = 8,
     r = 5,
     v = 1:8,
@@ -211,7 +237,15 @@ as_tibble(
 ```
  9. (harder) How would your answer for question 8 change if a team captain had to be selected for each team?
 ```{r}
+# step 1: choose a captain. We have 8 choices
+num_captains <- 8
 
+# step 2: for each choice of captain, choose 4 remaining team members from 7 
+teams <- combinations(n = 7, r = 4, v = 1:7, repeats.allowed = FALSE)
+num_team_combinations <- nrow(teams)
+
+# combinations
+num_captains * num_team_combinations
 ```
  
 

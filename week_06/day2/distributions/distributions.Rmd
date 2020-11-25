@@ -1,0 +1,91 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+mobile <- read_csv("data/20190928-items.csv") %>% clean_names()
+
+names(mobile)
+glimpse(mobile)
+dim(mobile)
+```
+Find the brand with the highest numbers of phones in the dataset.
+```{r}
+mobile %>% 
+  group_by(brand) %>% 
+  summarise(total = n()) %>% 
+  arrange(desc(total)) %>% 
+  head(1)
+```
+For your top brand, plot the distribution of phone ratings as a probability density, overlaying a fitted normal distribution. Do you think the normal distribution provides a good model of these ratings?
+```{r}
+samsung_stats <- mobile %>% 
+  filter(brand == "Samsung") %>% 
+  summarise(
+    num = n(),
+    mean = mean(rating),
+    sd = sd(rating)
+  )
+
+samsung_stats
+```
+```{r}
+mobile %>% 
+  filter(brand == "Samsung") %>% 
+  ggplot(aes(x = rating)) +
+  geom_histogram(aes(y = ..density..), col = "white", bins = 25) +
+  stat_function(
+    fun = dnorm,
+    args = list(
+      mean = samsung_stats$mean,
+      sd = samsung_stats$sd
+    ), 
+    col = "red"
+  )
+```
+The graph is skewed to left so it does not provide a good model of these ratings.
+
+We can be more quantitative in comparing the distribution of top brand ratings with a normal distribution. You calculated the mean() and sd() of your distribution in an earlier question. Use these values to calculate the proportions of ratings within one-, two- and three standard deviations of the mean. Compare these proportions with those you expect for a normal distribution.
+```{r}
+mobile %>%
+  select(brand, rating) %>% 
+  filter(brand == "Samsung") %>% 
+  filter(rating >= samsung_stats$mean - samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + samsung_stats$sd) %>%
+  summarise(prop_within_1sd = n() / nrow(mobile))
+```
+```{r}
+mobile %>%
+  select(brand, rating) %>% 
+  filter(brand == "Samsung") %>% 
+  filter(rating >= samsung_stats$mean - (2 *samsung_stats$sd)) %>%
+  filter(rating <= samsung_stats$mean + (2* samsung_stats$sd)) %>%
+  summarise(prop_within_2sd = n() / nrow(mobile))
+```
+
+```{r}
+mobile %>%
+  select(brand, rating) %>% 
+  filter(brand == "Samsung") %>% 
+  filter(rating >= samsung_stats$mean - (3* samsung_stats$sd)) %>%
+  filter(rating <= samsung_stats$mean + (3* samsung_stats$sd)) %>%
+  summarise(prop_within_3sd = n() / nrow(mobile))
+```
+After 3 sd it does not even cover half of rating which means that data is skewed 
+and there are outliers and distribution is not uniform.
+```{r}
+qq <- mobile %>% 
+  filter(brand == "Samsung")
+
+qqnorm(qq$rating, pch = 1, frame = FALSE)
+qqline(qq$rating, col = "steelblue", lwd = 2)
+```
+
+
+
