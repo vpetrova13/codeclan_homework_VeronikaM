@@ -49,6 +49,16 @@ boostrap_resample_200 %>%
   geom_histogram(col = "white", bins = 30)
 ```
 ```{r}
+bootstrap_distn <- ames %>%
+  specify(response = lot_area) %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+bootstrap_distn %>%
+  visualise(bins = 30)
+```
+
+```{r}
 ames %>% 
   summarise(mean_lot_area = mean(lot_area))
 ```

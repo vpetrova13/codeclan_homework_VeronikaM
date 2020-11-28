@@ -1,0 +1,200 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(infer)
+library(janitor)
+```
+Explore the dataset
+```{r}
+data("msleep")
+dim(msleep)
+names(msleep)
+glimpse(msleep)
+head(msleep)
+```
+Jabberwockies sleep for around 7 hours a night, on average. Perform an appropriate statistical test to determine whether the mean sleep_total in the sampled population of animal types differs from the typical value for jabberwockies.
+
+alpha = 0.05
+
+H0: mu_sleep_total = 7
+Ha: mu_sleep_total != 7
+
+```{r}
+observed_stat <- msleep %>% 
+  summarise(mean_sleep_total = mean(sleep_total))
+
+observed_stat
+```
+```{r}
+null_distribution <- msleep %>% 
+  specify(response = sleep_total) %>% 
+  hypothesise(null = "point", mu = 7) %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+null_distribution
+```
+```{r}
+null_distribution %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = observed_stat$mean_sleep_total, direction = "both")
+```
+```{r}
+p_value <- null_distribution %>% 
+  get_p_value(obs_stat = observed_stat$mean_sleep_total, direction = "both")
+
+p_value
+```
+As p value is almost 0 which means that there is a statistically significant difference
+between mean total sleep and 7. We reject the null hypothesis.
+
+Perform an appropriate statistical test to determine whether omnivores sleep for significantly longer than herbivores, on average.
+
+alpha = 0.05
+
+H0: omnivore_sleep - herbivore_sleep = 0
+Ha: omnivore_sleep - herbivore_sleep > 0
+
+```{r}
+omni_herb <- msleep %>% 
+  select(vore, sleep_total) %>% 
+  filter(vore == "omni" | vore == "herbi")
+
+omni_herb %>% 
+  group_by(vore) %>% 
+  summarise(mean_sleep_total = mean(sleep_total))
+```
+```{r}
+null_distribution <- omni_herb %>% 
+  specify(response = sleep_total, explanatory = vore) %>% 
+  hypothesise(null = "independence") %>% 
+  generate(reps = 10000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("omni", "herbi"))
+
+null_distribution
+```
+```{r}
+observed_stat <- omni_herb %>% 
+  specify(response = sleep_total, explanatory = vore) %>% 
+  calculate(stat = "diff in means", order = c("omni", "herbi"))
+
+observed_stat
+```
+```{r}
+null_distribution %>% 
+  visualise() +
+  shade_p_value(obs_stat = observed_stat, direction = "right")
+```
+```{r}
+null_distribution %>% 
+  get_p_value(obs_stat = observed_stat, direction = "right")
+```
+P value is more than 0.05 which means that we fail to reject the null hypothesis 
+and did not find significant difference in total_sleep between omni and herbi.
+
+Perform an appropriate statistical test to determine whether the proportion of domesticated animal types in the population of animal types is greater than 5%.
+
+H0: prop_dom = 5%
+Ha: prop_dom > 5%
+
+```{r}
+prop_dom <- msleep %>% 
+  mutate(is_domesticated = if_else(conservation == "domesticated", "1", "0")) %>% 
+  mutate(is_domesticated = replace_na(is_domesticated, "0")) 
+
+prop_dom 
+```
+```{r}
+null_distribution <- prop_dom %>%
+  specify(response = is_domesticated, success = "1") %>% 
+  hypothesise(null = "point", p = 0.05) %>% 
+  generate(reps = 10000, type = "simulate") %>% 
+  calculate(stat = "prop")
+
+null_distribution
+```
+```{r}
+observed_stat <- prop_dom %>% 
+  specify(response = is_domesticated, success = "1")  %>% 
+  calculate(stat = "prop")
+
+observed_stat
+```
+
+```{r}
+null_distribution %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+```
+```{r}
+null_distribution %>% 
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+```
+P value is below 0.05 which means that there is a statistically significant proportion
+in domesticated and animals which is more than 5%. We reject the null hypothesis.
+
+
+1. You work for a independent coffee shop. You’ve performed a small survey in the local town and found that 40% of the people you randomly asked were aware of your shop in the town. You then conduct a marketing campaign by flyering local venues and targeting advertisements on social media. Finally you conduct a second small random survey in the town, asking if people are aware of your coffee shop. You want to test the hypothesis that the campaign has significantly increased awareness of the shop.
+
+H0: prop_campaign = 40%
+Ha: prop_campaign > 40%
+
+This will be a proportion test of people knowing the coffee shop so I would use a 
+simulation test for it. I want to test here if the proportion of people who knows
+the shop has increased after the campaign. So I would use a one sample proportion test.
+Null hypothesis is nothing changed after the campaign and still 40% aware of the shop.
+Alternative hypothesis is that people proportion increased significantly.
+
+
+
+2. You work for a website design company and have performed an A/B test on the position of a banner on a website page promoting a particular item. 
+
+In the current test, the first group continues to be shown the banner at the right hand side of the webpage (its usual position) while the test group is shown it at the top of the page. The performance metric we will be testing is click through rate (CTR) on the banner, i.e. what proportion of users click on the banner
+
+H0: CTR(unchanged) - CTR(changed) = 0
+Ha: CTR(unchanged) - CTR(changed) != 0
+
+This will be a two proportions test of CTR so I would use a permutation test for it. 
+I want to test here the independent proportions of CTR of two banners (unchanged and changed. So I would use a two proportions independent test.
+Null hypothesis is there is no difference in proportions between two banners and alternative
+hypothesis is that there is a statistically significant proportion difference.
+
+
+3. You work as an analyst for a car manufacturing company - they have specific standards they must meet for standards and regulation purposes. You have been asked to check the quality control of the manufacture of a particular car part. The part must have a width of 145mm, with a small (given) level of tolerance. You have been given data on a sample of 1,000 parts produced over the period of a week.
+
+
+H0: car_width = 145 mm
+Ha: car_width != 145 mm
+
+This will be a one sample mean test and I would use a bootstrap test for it.
+I want to test here car width is different of what it should be or not (over 1000 samples).
+Null hypothesis is there is no difference in car_width and reality stays the same.
+Alternative hypothesis is that there are 1000 parts with significant different width.
+
+
+
+
+Coffee shop problem. Significance level: 0.05, calculated p-value: 0.07
+
+Null hypothesis is failed to be rejected and reality stays the same. There is no significant
+increase in prop of people knowing the shop after the campaign. Or it might be that there
+is no enough evidence to say that the proportion has increased. 
+
+
+
+
+Website company problem. Significance level: 0.01, p-value: 0.006
+P value is very small so there is a significant difference in CTR for changed banner,
+therefore I reject the null hypothesis in favour of alternative hypothesis.
+
+
+
+
+Manufacturing company problem. Significance level: 0.05, p-value: 0.55
+
+P value is more than significance level by only 0.05 which means that null hypothesis is failed to be rejected and there is no significant difference in width. However, there 
+was only 1000 samples. Increasing sample number can increase the power of statistics.
