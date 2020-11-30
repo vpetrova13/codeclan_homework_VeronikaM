@@ -25,6 +25,18 @@ a_prob <- transactions %>%
 
 a_prob
 ```
+```{r}
+total_transactions <- transactions %>%
+  summarise(n = n_distinct(InvoiceNo)) %>%
+  flatten_dbl()
+
+support_a <- transactions %>%
+  filter(StockCode == 22469) %>%
+  summarise(prop_invoices_with_item = n_distinct(InvoiceNo) / total_transactions)
+
+support_a
+```
+
 
 Calculate the support and confidence for rule (A→B).
 ```{r}
@@ -37,6 +49,37 @@ a_b_prob
 confidence <- a_b_prob$support_a_b / a_prob$support_a
 
 confidence
+```
+```{r}
+trans_feat_a <- transactions %>%
+  filter(StockCode == "22469") %>%
+  distinct(InvoiceNo)
+
+trans_feat_b <- transactions %>%
+  filter(StockCode == "21110") %>%
+  distinct(InvoiceNo)
+
+trans_feat_a_b <- trans_feat_a %>%
+  inner_join(trans_feat_b, by = "InvoiceNo")
+
+support_a_b <- trans_feat_a_b %>%
+  summarise(prop_with_a_b = n() / total_transactions)
+support_a_b
+```
+```{r}
+support_a_b <- transactions %>%
+  filter(StockCode == "22469" | StockCode == "21110") %>%
+  group_by(InvoiceNo, StockCode) %>% #group by in case cases where more than one stock in a purchase
+  summarise(count_of_item = n()) %>% 
+  group_by(InvoiceNo) %>%
+  summarise(count_of_A_and_B = n()) %>%
+  filter(count_of_A_and_B > 1) %>%
+  summarise(prop_with_A_and_B = n()/total_transactions)
+```
+
+```{r}
+confidence_a_b <- support_a_b / support_a
+confidence_a_b
 ```
 Calculate the lift for (A→B)
  [Hint - you will need to calculate the support for B]
@@ -51,6 +94,16 @@ lift <- a_b_prob$support_a_b/(a_prob$support_a * b_prob$support_b)
 lift
 ```
 Items are very likely to be bought together.
+```{r}
+support_b <- transactions %>%
+  filter(StockCode == 21110) %>%
+  summarise(prop_invoices_with_item = n_distinct(InvoiceNo)/total_transactions)
+
+lift_a_b <- support_a_b / (support_a * support_b)
+
+lift_a_b
+```
+The lift is high, so A and B are more likely to be sold together, but from the support of A(7.7%) and confidence of (A→B)(4.6%), we see that happens at quite a low frequency.
 
 ```{r}
 library(arules)
@@ -78,6 +131,7 @@ rules <- apriori(apriori_format, parameter = list(supp = 0.009, conf = 0.8))
 options(digits=2)
 inspect(rules[1:5])
 ```
+
 ```{r}
 rules<-sort(rules, by="confidence", decreasing=TRUE)
 rules
@@ -85,5 +139,9 @@ rules
 ```{r}
 plot(rules,method="graph",interactive=TRUE,shading=NA)
 ```
+```{r}
+plot(top_10)
+```
+
 
 

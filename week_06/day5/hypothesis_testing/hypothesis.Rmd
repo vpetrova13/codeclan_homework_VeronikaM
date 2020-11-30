@@ -52,6 +52,10 @@ p_value
 As p value is almost 0 which means that there is a statistically significant difference
 between mean total sleep and 7. We reject the null hypothesis.
 
+The p-value is below α and so we reject H0 and conclude that the mean sleep_total in the sampled population of animal types differs significantly from the value of 7 hours typical of jabberwockies.
+
+
+
 Perform an appropriate statistical test to determine whether omnivores sleep for significantly longer than herbivores, on average.
 
 alpha = 0.05
@@ -96,6 +100,10 @@ null_distribution %>%
 P value is more than 0.05 which means that we fail to reject the null hypothesis 
 and did not find significant difference in total_sleep between omni and herbi.
 
+The p-value is equal to or greater than α, and so we fail to reject H0. There is insufficient evidence to conclude that omnivores sleep for significantly longer than herbivores on average.
+
+
+
 Perform an appropriate statistical test to determine whether the proportion of domesticated animal types in the population of animal types is greater than 5%.
 
 H0: prop_dom = 5%
@@ -137,6 +145,9 @@ null_distribution %>%
 P value is below 0.05 which means that there is a statistically significant proportion
 in domesticated and animals which is more than 5%. We reject the null hypothesis.
 
+The p-value is less than α, so we reject H0 and accept that the proportion of domesticated animal types in the data is significantly greater than 5%.
+
+
 
 1. You work for a independent coffee shop. You’ve performed a small survey in the local town and found that 40% of the people you randomly asked were aware of your shop in the town. You then conduct a marketing campaign by flyering local venues and targeting advertisements on social media. Finally you conduct a second small random survey in the town, asking if people are aware of your coffee shop. You want to test the hypothesis that the campaign has significantly increased awareness of the shop.
 
@@ -145,9 +156,7 @@ Ha: prop_campaign > 40%
 
 This will be a proportion test of people knowing the coffee shop so I would use a 
 simulation test for it. I want to test here if the proportion of people who knows
-the shop has increased after the campaign. So I would use a one sample proportion test.
-Null hypothesis is nothing changed after the campaign and still 40% aware of the shop.
-Alternative hypothesis is that people proportion increased significantly.
+the shop has increased after the campaign. So I would use a one sample proportion test, right sided.Null hypothesis is nothing changed after the campaign and still 40% aware of the shop. Alternative hypothesis is that people proportion increased significantly.
 
 
 
@@ -159,7 +168,7 @@ H0: CTR(unchanged) - CTR(changed) = 0
 Ha: CTR(unchanged) - CTR(changed) != 0
 
 This will be a two proportions test of CTR so I would use a permutation test for it. 
-I want to test here the independent proportions of CTR of two banners (unchanged and changed. So I would use a two proportions independent test.
+I want to test here the independent proportions of CTR of two banners (unchanged and changed). So I would use a two proportions independent test, right sided.
 Null hypothesis is there is no difference in proportions between two banners and alternative
 hypothesis is that there is a statistically significant proportion difference.
 
@@ -171,7 +180,7 @@ H0: car_width = 145 mm
 Ha: car_width != 145 mm
 
 This will be a one sample mean test and I would use a bootstrap test for it.
-I want to test here car width is different of what it should be or not (over 1000 samples).
+I want to test here car width is different of what it should be or not (over 1000 samples). Two sided test.
 Null hypothesis is there is no difference in car_width and reality stays the same.
 Alternative hypothesis is that there are 1000 parts with significant different width.
 
@@ -180,9 +189,7 @@ Alternative hypothesis is that there are 1000 parts with significant different w
 
 Coffee shop problem. Significance level: 0.05, calculated p-value: 0.07
 
-Null hypothesis is failed to be rejected and reality stays the same. There is no significant
-increase in prop of people knowing the shop after the campaign. Or it might be that there
-is no enough evidence to say that the proportion has increased. 
+Null hypothesis is failed to be rejected and reality stays the same. There is no evidence of significant increase in prop of people knowing the shop after the campaign. Or it might be that there is no enough evidence to say that the proportion has increased. 
 
 
 
