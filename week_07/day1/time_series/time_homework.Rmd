@@ -44,7 +44,7 @@ Create a variable called this_year which contains today’s date. Then create an
 this_year <- today()
 
 interval_years <- lubridate::interval(this_year, previous_decade)
-interval_years
+as.period(interval_years)
 ```
 Question 4
 
@@ -72,7 +72,7 @@ Here we can see that our data is collected in hourly format, with observations o
 
 ```{r}
 weather %>% 
-  select(temp, humid, precip, time_hour)
+  select(temp, humid, precip, time_hour, origin)
 
 ```
 Interval is every hour. Index is time and keys are temp, humid and precip.
@@ -86,6 +86,8 @@ In order to create a time series tibble, remember you need to provide an index a
 weather_tsb <- as_tsibble(weather, key = origin, index = time_hour)
 weather_tsb
 ```
+In order to create a time series tibble, remember you need to provide an index and a key. In our case, time_hour is the only column involving a date/date-time, and so this would be our index. A tsibble also requires a key, which defines individual observations that are tracked over time. In this example, the origin variable is the identifier, and therefore is our key. It is important to note that the duo of the index and key uniquely identifies each observation in a valid tsibble.
+
 Question 8
 
 Add a year and month column to your new tsibble weather data, and create a basic line plot which shows the temperature data from each airport over time. Have a think back to what you learned in visualisation week, and think about whether plotting the whole time series in one go is adequate here? Write down your suggestions for what could be done to make a better and more informative plot.
@@ -93,9 +95,20 @@ Add a year and month column to your new tsibble weather data, and create a basic
 weather_tsb %>% 
   mutate(year_month = as_date(time_hour))  %>% 
   ggplot() +
-  aes(x = year_month, y = temp) +
+  aes(x = year_month, y = temp, color = origin) +
   geom_line()
 ```
+```{r}
+weather_tsb1 <- weather_tsb %>% 
+  mutate(year = year(time_hour),
+         month = month(time_hour))
+
+
+# Basic line plot with points : all data 
+ggplot(data = weather_tsb1, aes(x = time_hour, y = temp, group = origin)) + geom_line(aes(color=origin))
+```
+
+
 Question 9
 
 Choose an appropriate rolling window and calculate a moving average for your weather temperature data for each airport origin. Create a useful plot which overlays the original time series data and the rolling average data. Make sure the graph is easy for others to understand (Hint: you might want to facet_wrap). Finally, write a summary of why you chose the time window you did, and describe any trends you see.
@@ -105,18 +118,35 @@ weather_rolling <- weather_tsb %>%
     temp_moving_avg = slider::slide_dbl(
       .x = temp,
       .f = ~ mean(., na.rm = TRUE),
-      .before = 1000, 
-      .after = 1000
+      .before = 600, 
+      .after = 600
     )
   )
 
 weather_rolling %>%
   ggplot() +
   geom_line(aes(x = time_hour, y = temp), colour = "grey") +
-  geom_line(aes(x = time_hour, y = temp_moving_avg), colour = "red") +
-  facet_wrap(~origin)
+  geom_line(aes(x = time_hour, y = temp_moving_avg, color = origin)) +
+  facet_wrap(~origin) + 
+  ylab("Temperature") + 
+  xlab("Time") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.6, hjust = 1.0))
 ```
 Temp increases during summer period.
+```{r}
+weather_rolling <- weather_tsb %>% 
+  group_by_key(origin) %>% 
+  mutate(temp_ma = slider::slide_dbl(temp, ~ mean(., na.rm = TRUE), .after = 600, .before = 600 ))
+
+# plot the data 
+ggplot(weather_rolling) + 
+  geom_line(aes(x = time_hour, y = temp, group = origin), colour = "grey") + 
+  geom_line(aes(x = time_hour, y = temp_ma, colour = origin), size = 1) + 
+  facet_wrap(~ origin) + 
+  ylab("Temperature") + 
+  xlab("Time") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.6, hjust = 1.0))
+```
 
 Question 10
 
@@ -124,12 +154,23 @@ Downsample your data so that you plot daily temperature data for each airport, i
 ```{r}
 weather_tsb %>% 
   mutate(day = as_date(time_hour)) %>% 
+  group_by_key(origin) %>% 
   index_by(day) %>% 
   summarise(avg_temp = mean(temp, na.rm = TRUE)) %>% 
   ggplot() +
-  aes(x = day, y = avg_temp) +
-  geom_line()
+  aes(x = day, y = avg_temp, group = origin) +
+  geom_line(aes(color=origin))
   
+```
+```{r}
+weather_date <- weather_tsb %>%
+  group_by_key(origin) %>%
+  index_by(date = as_date(time_hour)) %>%
+  summarise(temp_mean = mean(temp, na.rm = TRUE))
+
+# make a plot
+ggplot(data = weather_date, aes(x = date, y = temp_mean, group = origin)) +
+  geom_line(aes(color=origin))
 ```
 
 

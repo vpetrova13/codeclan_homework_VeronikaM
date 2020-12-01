@@ -1,0 +1,173 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(tsibble)
+library(tsibbledata)
+library(fable)
+```
+ Question 1
+Load in the nyc_bikes data from the tsibbledata package. Have an initial look at it to see what you’re working with. Create three new columns: one that stores only the year the bike was used, one that stores only the month the bike was used, and one that stores the date. Use the data stored in start_time to create these new columns.
+
+```{r}
+cols <- nyc_bikes %>% 
+  mutate(year = year(start_time)) %>% 
+  mutate(month = month(start_time, label = TRUE, abbr = FALSE)) %>% 
+  mutate(date = date(start_time)) 
+
+cols
+```
+Question 2
+Summarise the number of bike hire counts by month. Make a plot of this data. *Hint: remember that to group time series (tsibble) data, you need to use index_by instead of group_by before your summarise function. What does this plot tell you about the time series? Do you think this downsampled data would be adequate to build a forecast with?
+```{r}
+nyc_bikes %>% 
+  mutate(year = year(start_time)) %>% 
+  mutate(month = month(start_time)) %>% 
+  mutate(date = date(start_time))  %>% 
+  index_by(month) %>% 
+  summarise(bike_counts = n()) %>% 
+  ggplot() +
+  aes(x = month, y = bike_counts) +
+  geom_line()
+```
+Bike counts increases for summer period. It is not enough for forecast data as 
+not that many points. Only data for one year (which is 2018). We don't know if it is
+seasonal behaviour.
+
+3 Question 3
+Now Summarise the number of bike hire counts by date. Make a plot of this new aggregated data. What does this plot tell you about the time series? Would this data be preferrable for time series forecasting compared to the monthly data? 
+```{r}
+cols %>% 
+  index_by(date) %>% 
+  summarise(bike_counts = n()) %>% 
+  ggplot() +
+  aes(x = date, y = bike_counts) +
+  geom_line()
+```
+Time series is irregular. There are now more data points for forecasting but still not enough to create a good model with low error predictions.
+
+Question 4
+Let’s begin to build a model. For this, we will use the downsampled by date dataset we created above in question 3.
+
+```{r}
+nyc_bikes_date_summary <- cols %>% 
+  index_by(date) %>%
+  summarise(bike_hire_counts = n())
+
+nyc_bikes_date_summary 
+
+nyc_bikes_filled <- nyc_bikes_date_summary %>%
+  fill_gaps(bike_hire_counts = as.integer(median(bike_hire_counts)))
+
+fit <- nyc_bikes_filled %>% 
+  model(
+    snaive = SNAIVE(bike_hire_counts),
+    mean_model = MEAN(bike_hire_counts),
+    arima = ARIMA(bike_hire_counts) 
+  )
+
+fit
+
+```
+Question 5
+Now we have our model fit, build a forecast to predict bike use over the next four months. Plot your models alongside your data.
+Hint: forecast parameter would be roughly 120 (30 days x 4 months)
+```{r}
+library(fabletools)
+
+forecast_bike <- fit %>% 
+  fabletools::forecast(h = 120)
+
+forecast_bike
+
+forecast_bike %>% 
+  autoplot(nyc_bikes_filled) +
+  ggtitle("Forecast for bike hire") +
+  xlab("Months") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+Question 6
+Test your model accuracy : choose a training data set from your main dataset, build a forecast on the training set, and then plot the training set forecast against the real data. Calculate model accuracy.
+
+```{r}
+train <- nyc_bikes_filled %>% 
+  filter_index("2018-01-01" ~ "2018-11-01")
+
+fit_train <- train %>% 
+  model(
+    mean_model = MEAN(bike_hire_counts),
+    arima = ARIMA(bike_hire_counts),
+    snaive = SNAIVE(bike_hire_counts)
+  )
+```
+
+```{r}
+forecast_test <- fit_train %>% 
+  fabletools::forecast(h = 90)
+
+forecast_test %>% 
+  autoplot(train, level = NULL) +
+  autolayer(filter_index(nyc_bikes_filled, "2018-11-01" ~ .), colour = "black") +
+  ggtitle("Forecasts for bike hire") +
+  xlab("Months") +
+  ylab("Counts") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+```{r}
+accuracy_model <- fabletools::accuracy(forecast_test, nyc_bikes_filled)
+
+accuracy_model
+```
+Question 7
+Look at your forecast plots and accuracy values. Describe your results. Are your models a good fit for the data? If not, why not? What would you suggest doing with the data if you were expected to present these back to a client? For example, would you ask for more data? Would you test a different model?
+
+My model is not very good. The fact that snaive model has the lowest error values, 
+means that the prediction models are bad. My model does not fit the real data. 
+It means that there was no enough data points. It requires more data for prediction model.
+
+
+Question 8
+Make a simple ggplot (geom_point) which plots the start longitude and latitudes of each bike. Create a separate facet for each bike_id. Colour the dots in by month of use. What does this tell you about what month each bike was used most in?
+
+Do the same for the end longitude and latitudes
+
+```{r}
+cols %>% 
+  ggplot() +
+  aes(x = start_long, y = start_lat, color = month) +
+  geom_point() +
+  facet_grid(~bike_id)
+```
+```{r}
+cols %>% 
+  ggplot() +
+  aes(x = end_long, y = end_lat, color = month) +
+  geom_point() +
+  facet_grid(~bike_id)
+```
+Question 9
+Create an interactive leaflet plot which plots the start points of the city bikes. Ensure it has at least markers to denote start points (taken from the nyc_bikes_spatial data). Feel free to add any additional features you wish.
+```{r}
+library(leaflet)
+
+leaflet(cols) %>% 
+  addTiles() %>% 
+  addMarkers(lng = ~start_long, lat = ~start_lat, popup = "Start points")
+```
+Extension
+This is VERY much an extension task, and will take a bit of time (as well as googling) if you decide to attempt it.
+
+Adapt your leaflet plot which adds lines showing the start and end point of each bike.
+
+```{r}
+leaflet(cols) %>% 
+  addTiles() %>% 
+  addMarkers(lng = ~start_long, lat = ~start_lat, popup = "Start points") %>% 
+  addPolylines(lng = ~end_long, lat = ~end_lat, group = ~bike_id)
+```
+
