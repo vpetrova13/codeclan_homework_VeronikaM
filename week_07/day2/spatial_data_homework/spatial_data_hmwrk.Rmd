@@ -49,6 +49,18 @@ cols %>%
   geom_line()
 ```
 Time series is irregular. There are now more data points for forecasting but still not enough to create a good model with low error predictions.
+Forecasts work better with more data. The monthly data didn’t have that many data points.
+There will be daily variation, and monthly variation that will be more accurately captured by using date based data.
+
+```{r}
+#ggplot(nyc_bikes_date_summary) + 
+  #aes(x = date_of_use, y = bike_hire_counts) +
+  #geom_point() + 
+  #geom_line(group = 1) +              
+  #ggtitle("Bike hire in NYC") + 
+  #xlab("Date") + ylab ("total count")
+```
+
 
 Question 4
 Let’s begin to build a model. For this, we will use the downsampled by date dataset we created above in question 3.
@@ -130,6 +142,13 @@ My model is not very good. The fact that snaive model has the lowest error value
 means that the prediction models are bad. My model does not fit the real data. 
 It means that there was no enough data points. It requires more data for prediction model.
 
+Forecast isn’t great. This could be for several reasons:
+
+not enough data
+something is affecting it
+wrong model choice
+I’d collect more data if possible - we only have a year’s worth so far.
+
 
 Question 8
 Make a simple ggplot (geom_point) which plots the start longitude and latitudes of each bike. Create a separate facet for each bike_id. Colour the dots in by month of use. What does this tell you about what month each bike was used most in?
@@ -148,7 +167,7 @@ cols %>%
   ggplot() +
   aes(x = end_long, y = end_lat, color = month) +
   geom_point() +
-  facet_grid(~bike_id)
+  facet_wrap(~bike_id)
 ```
 Question 9
 Create an interactive leaflet plot which plots the start points of the city bikes. Ensure it has at least markers to denote start points (taken from the nyc_bikes_spatial data). Feel free to add any additional features you wish.
@@ -157,7 +176,9 @@ library(leaflet)
 
 leaflet(cols) %>% 
   addTiles() %>% 
-  addMarkers(lng = ~start_long, lat = ~start_lat, popup = "Start points")
+  addMarkers(lng = ~start_long, lat = ~start_lat, popup = "Start points") %>%
+    setView(-74.00, 40.71, zoom = 12) %>%
+  addProviderTiles("CartoDB.Positron")
 ```
 Extension
 This is VERY much an extension task, and will take a bit of time (as well as googling) if you decide to attempt it.
@@ -169,5 +190,34 @@ leaflet(cols) %>%
   addTiles() %>% 
   addMarkers(lng = ~start_long, lat = ~start_lat, popup = "Start points") %>% 
   addPolylines(lng = ~end_long, lat = ~end_lat, group = ~bike_id)
+```
+
+```{r}
+library(geosphere)
+
+# subset the data to make it easier
+bikes <- nyc_bikes_data %>%
+  select(bike_id, start_time, start_lat, start_long, end_lat, end_long)
+
+# get start points (longitude has to go first)
+start <- bikes %>%
+  select(start_long, start_lat)
+
+# get end points (longitude has to go first)
+end <- bikes %>% 
+  select(end_long, end_lat)
+
+# convert to matrix  
+start_matrix <- as.matrix(start[ , c(1,2)])
+end_matrix <- as.matrix(end[ , c(1,2)])
+
+# plot using leaflet
+gcIntermediate(start_matrix, end_matrix,  
+           n=100, 
+           addStartEnd=TRUE,
+           sp=TRUE) %>% 
+leaflet() %>% 
+addTiles() %>% 
+addPolylines() 
 ```
 
