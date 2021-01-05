@@ -152,6 +152,6 @@ clean_data_meteorites %>%
   geom_point(aes(x = longitude, y = latitude, color = year, size = mass_kg, 
                  alpha = 0.3)) +
   coord_cartesian() + 
-  guides( alpha = FALSE)
+  guides(alpha = FALSE)
 ```
 

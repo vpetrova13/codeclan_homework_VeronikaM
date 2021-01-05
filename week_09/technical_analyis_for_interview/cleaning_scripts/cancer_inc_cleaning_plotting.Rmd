@@ -1,0 +1,195 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+cancer_data <- read_csv("../cancer_incidence_clean.csv")
+
+health_board <- read_csv("https://www.opendata.nhs.scot/dataset/9f942fdb-e59e-44f5-b534-d6e17229cc7b/resource/652ff726-e676-4a20-abda-435b98dd7bdc/download/geography_codes_and_labels_hb2014_01042019.csv") %>% clean_names() 
+
+health_board <- health_board %>% 
+  select(hb, hb_name)
+
+cancer_hb_data <- left_join(cancer_data, health_board, by = "hb")
+
+head(cancer_hb_data)
+```
+
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = incidences_all_ages, fill = sex) +
+  geom_col() +
+  facet_wrap(~hb_name, ncol = 4) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(
+    x = "Year",
+    y = "Incidences of all ages"
+  ) 
+```
+#By incidences it shows high numbers where population is high so Glasgow area
+and around has the highest numbers. Some health borders have an increase throughout years, others have almost constant incidences.
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(hb_name %in% c("NHS Orkney", "NHS Shetland", "NHS Western Isles")) %>%
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = incidences_all_ages, fill = sex) +
+  geom_col() +
+  facet_wrap(~hb_name, ncol = 4) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(
+    x = "Year",
+    y = "Incidences of all ages"
+  ) 
+```
+#Closer look at islands data shows that there are increase in incidences throughout years but maybe not that much for Western Isles.
+
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = crude_rate, fill = sex) +
+  geom_col() +
+  facet_wrap(~hb_name, ncol = 4) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(
+    x = "Year",
+    y = "Crude rate per 100,000 person-years"
+  )  
+```
+#Crude rate per 100,000 person-years show that islands have spikes in some years and it is no constant or gradual increase. Here we can see that Glasgow area is actually almost constant throught years while other areas show increase.
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(hb_name %in% c("NHS Orkney", "NHS Shetland", "NHS Western Isles")) %>%
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = crude_rate, fill = sex) %>% 
+  geom_col() +
+  facet_wrap(~hb_name) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() 
+```
+#Closer look at islands data of crude rate. Almost similar to incidences data.
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(!hb_name %in% c("NHS Orkney", "NHS Shetland", "NHS Western Isles")) %>%
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = crude_rate, fill = sex) %>% 
+  geom_col() +
+  facet_wrap(~hb_name) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() 
+```
+#Borders like Lothian, Glasgow and possibly Tayside have almost constant crude_rate through the years.
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = standardised_incidence_ratio, fill = sex) +
+  geom_col() +
+  facet_wrap(~hb_name, ncol = 4) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(
+    x = "Year",
+    y = "Standardised incidence ratio"
+  ) 
+```
+#Standardised incidence ratio has made all rate to be constant throughout the years. Only islands have some spikes.
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = easr, fill = sex) +
+  geom_col() +
+  facet_wrap(~hb_name, ncol = 4) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(
+    x = "Year",
+    y = "Crude rate per 100,000 person-years"
+  )  
+```
+#European standard almost similar to standardised rate.
+```{r}
+cancer_hb_data %>% 
+  select(year, hb_name, sex, cancer_site, sir_lower95pc_confidence_interval, sir_upper95pc_confidence_interval)  %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex == "All") %>% 
+  ggplot() +
+  aes(x = year) +
+  geom_point(aes(y = sir_lower95pc_confidence_interval), color = "blue") +
+  geom_point(aes(y = sir_upper95pc_confidence_interval), color = "red") +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic()  +
+  facet_wrap(~hb_name)
+```
+#Upper and lower confidence intervals shows how data is distributed and it is
+related to population. Islands data is disperse possibly because there is not 
+that many people live on islands and therefore, not that much data.
+```{r}
+cancer_hb_data %>% 
+  select(year, hb_name, sex, cancer_site, crude_rate_lower95pc_confidence_interval, crude_rate_upper95pc_confidence_interval)  %>% 
+  filter(cancer_site == "All cancer types") %>% 
+  filter(sex == "All") %>% 
+  ggplot() +
+  aes(x = year) +
+  geom_point(aes(y = crude_rate_lower95pc_confidence_interval), color = "blue") +
+  geom_point(aes(y = crude_rate_upper95pc_confidence_interval), color = "red") +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015)) +
+  theme_classic()  +
+  facet_wrap(~hb_name)
+```
+
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site != "All cancer types") %>% 
+  filter(sex == "All") %>% 
+  group_by(hb_name, cancer_site) %>% 
+  summarise(avg = median(standardised_incidence_ratio)) %>% 
+  ggplot() +
+  aes(x = reorder(cancer_site, avg), y = avg, fill = hb_name) +
+  geom_col() +
+  coord_flip() 
+```
+
+```{r}
+cancer_hb_data %>% 
+  filter(cancer_site == "Hodgkin lymphoma") %>% 
+  filter(sex != "All") %>% 
+  ggplot() +
+  aes(x = year, y = standardised_incidence_ratio, fill = sex) %>% 
+  geom_col() +
+  facet_wrap(~hb_name)
+```
+#Conclusion 
+A crude rate is defined as the total number of events, or count, divided by the mid-year total population of the selected geography and multiplied by a constant, which is a multiple of 10.
+
+An SIR analysis can tell us if the number of observed cancer cases in a particular geographic area is higher or lower than expected, given the population and age distribution for that community.
+
+In conclusion, rate of cancer across different borders has almost not changed 
+throughout the years if it is standardised ratio. Islands seems to have spikes in cancer incidences every 3 years.
+
+

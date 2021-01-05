@@ -1,0 +1,116 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(ggfortify)
+```
+
+```{r}
+project <- read_csv("data/project_management.csv")
+head(project)
+```
+```{r}
+project %>% 
+  ggplot(aes(x = estimated_length, y = actual_length)) +
+  geom_point()
+```
+```{r}
+project %>% 
+  summarise(cor = cor(estimated_length, actual_length))
+```
+It has very strong positive correlation coefficient between two variables.
+```{r}
+model <- lm(formula = actual_length ~ estimated_length, data = project)
+model
+```
+```{r}
+project %>% 
+  ggplot(aes(x = estimated_length, y = actual_length)) +
+  geom_point() +
+  geom_abline(
+    intercept = model$coefficients[1],
+    slope = model$coefficients[2],
+    col = "red"
+  )
+```
+```{r}
+glance(model)
+```
+The line does not fit all the data. Probably due to outliers.
+```{r}
+tidy(model)
+```
+```{r}
+summary(model)
+```
+```{r}
+autoplot(model)
+```
+```{r}
+project %>% 
+  ggplot(aes(x = estimated_length, y = actual_length)) +
+  geom_point() +
+  geom_abline(
+    intercept = model$coefficients[1],
+    slope = model$coefficients[2],
+    col = "red"
+  ) + 
+  geom_text(aes(label = 1:nrow(project)))
+```
+Outliers: 5, 18, 28, 27, 37, 21, 28
+Influential: 5, 18
+Non-influential: 27, 21, 37
+```{r}
+autoplot(model, which = 4)
+```
+```{r}
+non_inf <- project %>% 
+  slice(-c(31, 10,17)) %>% 
+  slice(-c(18, 15, 13))
+
+model_non_inf <- lm(formula = actual_length ~ estimated_length, data = non_inf)
+model_non_inf
+```
+```{r}
+non_inf %>% 
+  ggplot(aes(x = estimated_length, y = actual_length)) +
+  geom_point() +
+  geom_abline(
+    intercept = model_non_inf$coefficients[1],
+    slope = model_non_inf$coefficients[2],
+    col = "red"
+  ) +
+  geom_abline(
+    intercept = model$coefficients[1],
+    slope = model$coefficients[2],
+    col = "blue"
+  )
+```
+```{r}
+inf <- project %>% 
+  slice(-c(5, 22,39)) 
+
+model_inf <- lm(formula = actual_length ~ estimated_length, data = inf)
+model_inf
+```
+```{r}
+inf %>% 
+  ggplot(aes(x = estimated_length, y = actual_length)) +
+  geom_point() +
+  geom_abline(
+    intercept = model_inf$coefficients[1],
+    slope = model_inf$coefficients[2],
+    col = "red"
+  )
+  
+```
+
+
+
+
+
