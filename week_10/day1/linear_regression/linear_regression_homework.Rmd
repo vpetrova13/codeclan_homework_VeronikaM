@@ -27,7 +27,18 @@ It has very strong positive correlation coefficient between two variables.
 ```{r}
 model <- lm(formula = actual_length ~ estimated_length, data = project)
 model
+summary(model)
 ```
+The regression equation is:
+
+actual_lengthˆ=1.4164+1.2235×estimated_length
+so a 1
+ day increase in estimated_length is associated with a 1.2235
+ day increase in actual_length, i.e. the company is underestimating job lengths.
+
+The r2
+ value tells us that approximately 65%
+ of the variation in actual_length can be predicted from the variation in estimated_length.
 ```{r}
 project %>% 
   ggplot(aes(x = estimated_length, y = actual_length)) +
@@ -46,11 +57,15 @@ The line does not fit all the data. Probably due to outliers.
 tidy(model)
 ```
 ```{r}
-summary(model)
-```
-```{r}
 autoplot(model)
 ```
+Aside from outliers (certainly point 5
+, and perhaps point 18
+), the diagnostic plots looks reasonable. The ‘Residuals vs Fitted’ plot reveals independent residuals, the ‘Normal Q-Q’ plot looks fine, and there is no systematic upward or downward trend in the the ‘Scale-Location’ plot.
+
+The relationship is statistically significant, as the p
+-value of the slope is much less than a typical α
+ of 0.05.
 ```{r}
 project %>% 
   ggplot(aes(x = estimated_length, y = actual_length)) +
@@ -60,22 +75,38 @@ project %>%
     slope = model$coefficients[2],
     col = "red"
   ) + 
-  geom_text(aes(label = 1:nrow(project)))
+  geom_text(aes(label = 1:nrow(project)), nudge_x = 0.2, nudge_y = 1)
 ```
-Outliers: 5, 18, 28, 27, 37, 21, 28
-Influential: 5, 18
-Non-influential: 27, 21, 37
+Outliers: 5, 18
+Influential: 5
+Non-influential: 18
 ```{r}
 autoplot(model, which = 4)
 ```
 ```{r}
+par(mfrow = c(2,2))
+plot(model)
+```
+The Cook’s distance plot confirms that point 5
+ is an ‘influential’ outlier, as it lies above 1
+. In fact, this threshold is rather arbitrary, a better method is to look to see if any observation has a Cook’s distance substantially greater than the others. If so, examine that observation. So we would definitely want to look again at the data gathered and the estimation process for the job on row 5 to see if any errors were made.
+
+Point 18
+ is an outlier, but is ‘non-influential’, as it has a Cook’s distance similar to the other points.
+```{r}
 non_inf <- project %>% 
-  slice(-c(31, 10,17)) %>% 
   slice(-c(18, 15, 13))
 
 model_non_inf <- lm(formula = actual_length ~ estimated_length, data = non_inf)
 model_non_inf
 ```
+The intercepts differ by 0.175
+ in 1.416
+, i.e. by 12%
+. The coefficients differ by only 0.002
+ in 1.223
+, i.e. by 0.2%
+. These support classifying this point as ‘non-influential’. 
 ```{r}
 non_inf %>% 
   ggplot(aes(x = estimated_length, y = actual_length)) +
@@ -98,6 +129,15 @@ inf <- project %>%
 model_inf <- lm(formula = actual_length ~ estimated_length, data = inf)
 model_inf
 ```
+The intercepts differ by 2.965
+ in 1.416
+, i.e. by 209%
+. The coefficients differ by 0.212
+ in 1.223
+, i.e. by 17%
+. Omitting this point leads to much larger differences in the regression parameters than the omission of point 18
+, and justify labelling point 5
+ as an influential outlier.
 ```{r}
 inf %>% 
   ggplot(aes(x = estimated_length, y = actual_length)) +
@@ -106,7 +146,12 @@ inf %>%
     intercept = model_inf$coefficients[1],
     slope = model_inf$coefficients[2],
     col = "red"
-  )
+  ) +
+  geom_abline(
+    intercept = model$coefficients[1],
+    slope = model$coefficients[2],
+    col = "blue"
+  ) 
   
 ```
 
