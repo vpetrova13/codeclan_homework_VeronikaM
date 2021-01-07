@@ -10,7 +10,7 @@ glimpse(diamonds)
 ```
 ```{r}
 library(GGally)
-ggpairs(diamonds)
+ggpairs(diamonds[,c("carat", "x", "y", "z")])
 ```
 ```{r}
 diamonds <- diamonds %>% 
@@ -28,6 +28,15 @@ diamonds %>%
   geom_smooth(method = "lm", se = FALSE)
 ```
 ```{r}
+diamonds %>%
+  ggplot(aes(x = cut, y = price)) +
+  geom_boxplot()
+```
+```{r}
+unique(diamonds$cut)
+```
+
+```{r}
 library(fastDummies)
 ```
 ```{r}
@@ -42,6 +51,11 @@ diamonds_dummy <- diamonds %>%
 diamonds_dummy
 ```
 ```{r}
+diamonds_dummies <- dummy_cols(diamonds, select_columns = c("cut", "clarity", "color"), remove_first_dummy = TRUE)
+glimpse(diamonds_dummies)
+```
+
+```{r}
 model <- lm(price~carat, data = diamonds)
 summary(model)
 ```
@@ -49,6 +63,12 @@ summary(model)
 library(ggfortify)
 autoplot(model)
 ```
+```{r}
+mod2_logx <- lm(price ~ log(carat), data = diamonds)
+par(mfrow = c(2,2))
+plot(mod2_logx)
+```
+
 ```{r}
 model <- lm(log(price) ~ log(carat), data = diamonds)
 summary(model)
@@ -60,7 +80,30 @@ summary(model)
 autoplot(model)
 ```
 
-
-
+```{r}
+mod3_clarity <- lm(log(price) ~ log(carat) + clarity, data = diamonds)
+summary(mod3_clarity)
+```
+```{r}
+ratio <- exp(1.114625)
+ratio
+```
+Taken from clarity IF estimate from summary of model.
+so, on average, the price of an IF diamond will be approx. 3 times higher than that of I1 diamond of same carat.
+```{r}
+mod4_clarity_inter <- lm(log(price) ~ log(carat) + clarity + log(carat):clarity, data = diamonds)
+summary(mod4_clarity_inter)
+```
+```{r}
+anova(mod3_clarity, mod4_clarity_inter)
+```
+```{r}
+diamonds %>%
+  ggplot(aes(x = log(carat), y = log(price), colour = clarity)) +
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ clarity)
+```
+not much evidence that the gradient of the line varies significantly with clarity
 
 
