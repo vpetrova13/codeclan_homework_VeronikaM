@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+```{r}
+house <- read_csv("data/kc_house_data.csv")
+house
+```
+```{r}
+house_tidy <- house %>% 
+  select(-c(id, date, sqft_living15, sqft_lot15, zipcode)) %>% 
+  mutate(waterfront = as.logical(waterfront)) %>% 
+  mutate(renovated = ifelse(yr_renovated > 0, TRUE, FALSE)) %>% 
+  select(-yr_renovated)
+
+house_tidy
+```
+Check for aliased variables using the alias() function (this takes in a formula object and a data set). [Hint - formula price ~ . says ‘price varying with all predictors’, this is a suitable input to alias()]. Remove variables that lead to an alias. Check the ‘Elements of multiple regression’ lesson for a dropdown containing further information on finding aliased variables in a dataset.
+```{r}
+alias(price ~., house_tidy)
+
+house_data <- house_tidy %>% 
+  select(-c(sqft_living, sqft_above, sqft_basement))
+```
+```{r}
+summary(house_data)
+```
+```{r}
+library(GGally)
+
+house_data %>% 
+  ggpairs(aes(colour = renovated, alpha = 0.5))
+```
+```{r}
+houses_tidy_numeric <- house_data %>%
+  select_if(is.numeric)
+
+houses_tidy_nonnumeric <- house_data %>%
+  select_if(function(x) !is.numeric(x))
+
+houses_tidy_nonnumeric$price <- house_data$price
+
+ggpairs(houses_tidy_numeric)
+ggpairs(houses_tidy_nonnumeric)
+```
+```{r}
+model1 <- lm(price ~ grade, data = houses_tidy_numeric)
+summary(model1)
+
+par(mfrow = c(2,2))
+plot(model1)
+```
+```{r}
+library(modelr)
+price_remaining_resid <- houses_tidy_numeric %>% 
+  add_residuals(model1) %>% 
+  select(-c(price, grade))
+```
+
+```{r}
+price_remaining_resid %>% 
+  ggpairs(aes( alpha = 0.5))
+```
+```{r}
+model2 <- lm(price ~ grade + bathrooms, data = houses_tidy_numeric)
+summary(model2)
+
+par(mfrow = c(2,2))
+plot(model2)
+```
+```{r}
+price_remaining_resid <- houses_tidy_numeric %>% 
+  add_residuals(model2) %>% 
+  select(-c(price, grade, bathrooms))
+```
+
+```{r}
+price_remaining_resid %>% 
+  ggpairs(aes( alpha = 0.5))
+```
+
+```{r}
+house_data %>% 
+  select(price, grade, bathrooms, waterfront, renovated) %>% 
+  ggpairs()
+```
+
+```{r}
+model3 <- lm(price ~ grade + bathrooms+ renovated, data = house_data)
+summary(model3)
+
+par(mfrow = c(2,2))
+plot(model3)
+```
+```{r}
+anova(model2, model3)
+```
+```{r}
+price_remaining_resid <- house_data %>% 
+  add_residuals(model3) %>% 
+  select(-c(price, grade, bathrooms, renovated))
+```
+
+```{r}
+price_remaining_resid %>% 
+  ggpairs(aes( alpha = 0.5))
+```
+
+
