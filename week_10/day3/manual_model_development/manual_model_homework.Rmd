@@ -15,7 +15,9 @@ house_tidy <- house %>%
   select(-c(id, date, sqft_living15, sqft_lot15, zipcode)) %>% 
   mutate(waterfront = as.logical(waterfront)) %>% 
   mutate(renovated = ifelse(yr_renovated > 0, TRUE, FALSE)) %>% 
-  select(-yr_renovated)
+  select(-yr_renovated)  %>%
+  mutate(condition = as_factor(condition)) %>%
+  mutate(grade = as_factor(grade))
 
 house_tidy
 ```
@@ -24,16 +26,13 @@ Check for aliased variables using the alias() function (this takes in a formula 
 alias(price ~., house_tidy)
 
 house_data <- house_tidy %>% 
-  select(-c(sqft_living, sqft_above, sqft_basement))
+  select(-sqft_living)
 ```
 ```{r}
-summary(house_data)
+alias(price ~., house_data)
 ```
 ```{r}
 library(GGally)
-
-house_data %>% 
-  ggpairs(aes(colour = renovated, alpha = 0.5))
 ```
 ```{r}
 houses_tidy_numeric <- house_data %>%
@@ -44,53 +43,76 @@ houses_tidy_nonnumeric <- house_data %>%
 
 houses_tidy_nonnumeric$price <- house_data$price
 
-ggpairs(houses_tidy_numeric)
-ggpairs(houses_tidy_nonnumeric)
+ggpairs(houses_tidy_numeric, progress = FALSE)
+ggpairs(houses_tidy_nonnumeric, progress = FALSE)
 ```
 ```{r}
-model1 <- lm(price ~ grade, data = houses_tidy_numeric)
+model1 <- lm(price ~ grade, data = house_data)
 summary(model1)
 
 par(mfrow = c(2,2))
 plot(model1)
 ```
 ```{r}
-library(modelr)
-price_remaining_resid <- houses_tidy_numeric %>% 
-  add_residuals(model1) %>% 
-  select(-c(price, grade))
+null_model <- lm(price ~ 1, data = house_data)
+grade_model <- lm(price ~ grade, data = house_data)
+anova(null_model, grade_model)
 ```
 
 ```{r}
-price_remaining_resid %>% 
-  ggpairs(aes( alpha = 0.5))
+library(modelr)
+price_remaining_resid <- house_data %>% 
+  add_residuals(model1) %>% 
+  select(-c(price, grade))
+
+houses_resid_numeric <- price_remaining_resid %>%
+  select_if(is.numeric)
+
+houses_resid_nonnumeric <- price_remaining_resid %>%
+  select_if(function(x) !is.numeric(x))
+
+houses_resid_nonnumeric$resid <- price_remaining_resid$resid
+```
+
+```{r}
+houses_resid_nonnumeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
+
+houses_resid_numeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
+
 ```
 ```{r}
-model2 <- lm(price ~ grade + bathrooms, data = houses_tidy_numeric)
+model2 <- lm(price ~ grade + lat, data = house_data)
 summary(model2)
 
 par(mfrow = c(2,2))
 plot(model2)
 ```
 ```{r}
-price_remaining_resid <- houses_tidy_numeric %>% 
+price_remaining_resid <- house_data%>% 
   add_residuals(model2) %>% 
-  select(-c(price, grade, bathrooms))
+  select(-c(price, grade, lat))
+
+houses_resid_numeric <- price_remaining_resid %>%
+  select_if(is.numeric)
+
+houses_resid_nonnumeric <- price_remaining_resid %>%
+  select_if(function(x) !is.numeric(x))
+
+houses_resid_nonnumeric$resid <- price_remaining_resid$resid
 ```
 
 ```{r}
-price_remaining_resid %>% 
-  ggpairs(aes( alpha = 0.5))
+houses_resid_nonnumeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
+
+houses_resid_numeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
 ```
 
 ```{r}
-house_data %>% 
-  select(price, grade, bathrooms, waterfront, renovated) %>% 
-  ggpairs()
-```
-
-```{r}
-model3 <- lm(price ~ grade + bathrooms+ renovated, data = house_data)
+model3 <- lm(price ~ grade + lat + view, data = house_data)
 summary(model3)
 
 par(mfrow = c(2,2))
@@ -102,12 +124,65 @@ anova(model2, model3)
 ```{r}
 price_remaining_resid <- house_data %>% 
   add_residuals(model3) %>% 
-  select(-c(price, grade, bathrooms, renovated))
+  select(-c(price, grade, lat, view))
+
+houses_resid_numeric <- price_remaining_resid %>%
+  select_if(is.numeric)
+
+houses_resid_nonnumeric <- price_remaining_resid %>%
+  select_if(function(x) !is.numeric(x))
+
+houses_resid_nonnumeric$resid <- price_remaining_resid$resid
 ```
 
 ```{r}
-price_remaining_resid %>% 
-  ggpairs(aes( alpha = 0.5))
+houses_resid_nonnumeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
+
+houses_resid_numeric %>% 
+  ggpairs(aes( alpha = 0.5), progress = FALSE)
 ```
+```{r}
+price_resid <- house_data %>% 
+  add_residuals(model3) %>% 
+  select(-price)
+
+price_resid %>% 
+  ggplot(aes(x = view, y = resid, color = grade)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+```{r}
+price_resid %>% 
+  ggplot(aes(x = sqft_basement, y = resid, color = grade)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+```{r}
+model4 <- lm(price ~ grade + lat + view + sqft_basement + view:sqft_basement, data = house_data)
+summary(model4)
+
+par(mfrow = c(2,2))
+plot(model4)
+```
+```{r}
+model5 <- lm(price ~ grade + lat + view + sqft_basement + lat:sqft_basement, data = house_data)
+summary(model5)
+
+par(mfrow = c(2,2))
+plot(model5)
+```
+```{r}
+library(relaimpo)
+calc.relimp(model4, type = "lmg", rela = TRUE)
+```
+```{r}
+price_resid %>%
+  ggplot(aes(x = sqft_basement, y = resid, colour = grade)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ grade)
+```
+
 
 
