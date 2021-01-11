@@ -65,7 +65,7 @@ summary(regsubsets_forward)
 ```
 ```{r}
 n_data <- nrow(avocado_tidy)
-test_index <- sample(1:n_data, size = n_data*0.1)
+test_index <- sample(1:n_data, size = n_data*0.2)
 
 test  <- slice(avocado_tidy, test_index)
 train <- slice(avocado_tidy, -test_index)
@@ -125,7 +125,130 @@ model_int is the best model after all the checks for predictions of average_pric
 ```{r}
 summary(model_int)
 ```
+```{r}
+library(glmulti)
+```
 
+```{r}
+glmulti_fit <- glmulti(
+  average_price ~ ., 
+  data = train,
+  level = 1, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 1, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "h", # try exhaustive search, or could use "g" for genetic algorithm instead
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 10, # return best 10 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
 
+```{r}
+summary(glmulti_fit)
+```
 
+```{r}
+# lowest BIC model with main effects
+lowest_bic_model <- lm(average_price ~ type + year + quarter + total_volume + x_large_bags + region, data = train)
+results <- results %>%
+  add_row(
+    tibble_row(
+      name = "lowest bic", 
+      bic = bic(lowest_bic_model),
+      rmse_train = rmse(lowest_bic_model, train),
+      rmse_test = rmse(lowest_bic_model, test)
+    )
+  )
+
+# try adding in all possible pairs with these main effects
+lowest_bic_model_all_pairs <- lm(average_price ~ (type + year + quarter + total_volume + x_large_bags + region)^2, data = train)
+results <- results %>%
+  add_row(
+    tibble_row(
+      name = "lowest bic all pairs", 
+      bic = bic(lowest_bic_model_all_pairs),
+      rmse_train = rmse(lowest_bic_model_all_pairs, train),
+      rmse_test = rmse(lowest_bic_model_all_pairs, test)
+    )
+  )
+```
+
+```{r}
+# try a model with all main effects
+model_all_mains <- lm(average_price ~ ., data = train)
+results <- results %>%
+  add_row(
+    tibble_row(
+      name = "all mains", 
+      bic = bic(model_all_mains),
+      rmse_train = rmse(model_all_mains, train),
+      rmse_test = rmse(model_all_mains, test)
+    )
+  )
+
+# try a model with all main effects and all pairs
+model_all_pairs <- lm(average_price ~ .^2, data = train)
+results <- results %>%
+  add_row(
+    tibble_row(
+      name = "all pairs", 
+      bic = bic(model_all_pairs),
+      rmse_train = rmse(model_all_pairs, train),
+      rmse_test = rmse(model_all_pairs, test)
+    )
+  )
+```
+
+```{r}
+# try a model with all main effects, all pairs and one triple 
+model_all_pairs_one_triple <- lm(average_price ~ .^2 + region:type:year, data = train)
+results <- results %>%
+  add_row(
+    tibble_row(
+      name = "all pairs one triple",
+      bic = bic(model_all_pairs_one_triple),
+      rmse_train = rmse(model_all_pairs_one_triple, train),
+      rmse_test = rmse(model_all_pairs_one_triple, test)
+    )
+  )
+```
+
+```{r}
+results <- results %>%
+  pivot_longer(cols = bic:rmse_test, names_to = "measure", values_to = "value") %>%
+  mutate(
+    name = fct_relevel(
+      as_factor(name),
+      "lowest bic", "all mains", "lowest bic all pairs", "all pairs", "all pairs one triple", "all pairs multi triples"
+    )
+  )
+```
+
+```{r}
+results %>%
+  filter(measure == "bic") %>%
+  ggplot(aes(x = name, y = value)) +
+  geom_col(fill = "steelblue", alpha = 0.7) +
+  labs(
+    x = "model",
+    y = "bic"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(aes(yintercept = 0))
+```
+
+```{r}
+results %>%
+  filter(measure != "bic") %>%
+  ggplot(aes(x = name, y = value, fill = measure)) +
+  geom_col(position = "dodge", alpha = 0.7) +
+  labs(
+    x = "model",
+    y = "rmse"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 

@@ -6,7 +6,8 @@ output: html_notebook
 Homework Quiz
 I want to predict how well 6 year-olds are going to do in their final school exams. Using the following variables am I likely under-fitting, fitting well or over-fitting? Postcode, gender, reading level, score in maths test, date of birth, family income.
 
-- Some variables are not related to exam at all such as postcode and family income, gender variable is a disallowed variable as it creates bias. Therefore, the model with these kind of variables would probably overfit. 
+- Some variables are not related to exam at all such as postcode and family income, gender variable is a disallowed variable as it creates bias. Therefore, the model with these kind of variables would probably overfit.  
+Over-fitting. Remember that most people are uniquely identifiable by their postcode, gender and date of birth. If we include all these variable in our model, or model will not be finding patterns, but identifying individuals.
 
 If I have two models, one with an AIC score of 34,902 and the other with an AIC score of 33,559 which model should I use?
 
@@ -18,8 +19,8 @@ I have two models, the first with: r-squared: 0.44, adjusted r-squared: 0.43. Th
 
 I have a model with the following errors: RMSE error on test set: 10.3, RMSE error on training data: 10.4. Do you think this model is over-fitting?
 
-- It does not tell us directly that the model is over fitted. It just tells errors of the model. In this case, it does not look like to be overfitted, but well-fitter. 
-More tests required to assess fitness. 
+- It does not tell us directly that the model is over fitted. It just tells errors of the model. In this case, it does not look like to be overfitted, but well-fitted. 
+No, since the error is similar on the test and on the train, the model is unlikely to be over-fitting.
 
 How does k-fold validation work? 
 
@@ -27,7 +28,7 @@ How does k-fold validation work?
 
 What is a validation set? When do you need one? 
 
-- A set that is used neither to test or train your models. Used as a final measure of accuracy.
+- A set that is used neither to test or train your models. Used as a final measure of accuracy. They are particularly useful when you are tuning hyper-parameters.
 
 Describe how backwards selection works. 
 
@@ -36,32 +37,36 @@ At each step, check all predictors in the model, and find the one that lowers r2
  the least when it is removed
 Remove this predictor from the model
 Keep note of the number of predictors in the model and the current model formula
-Go on to remove another predictor, or stop if all predictors in the model have been removed
+Go on to remove another predictor, or stop if all predictors in the model have been removed.
+You start with a model that contains all the variables, then you remove variables one by one until you maximise some penalised measure of model fit.
 
 Describe how best subset selection works.
 
 - At each size of model, search all possible combinations of predictors for the best model (i.e. the model with highest r2
-) of that size. The effort of this algorithm increases exponentially with the number of predictors
+) of that size. The effort of this algorithm increases exponentially with the number of predictors.
+You find every possible subset of variables in your model. You pick the model which scores best on some penalised measure of model fit.
 
 It is estimated on 5% of model projects end up being deployed. What actions can you take to maximise the likelihood of your model being deployed?
 
 - There are various aspects which required to be considered before implementation of a model such as disallowed variables or explainability. Al of these needs to be considered and documentation provided with contact details and all information of a model. 
+Document from the outset, including rationale and approach, ensure the model validates on a recent data sample, check to ensure it does not contain illegal variables or proxies for these and ensure it can be physically implemented in a production system.
 
 What metric could you use to confirm that the recent population is similar to the development population?
 
-- Score distribution
+- The Population Stability Index (PSI)
 
 How is the Population Stability Index defined? What does this mean in words? 
 
 - “Population Stability Index (PSI) compares the distribution of a scoring variable (predicted probability) in scoring data set to a training data set that was used to develop the model. The idea is to check”How the current scoring is compared to the predicted probability from training data set" 
+The PSI is the sum of the difference in the distribution in bands multiplied by weight of evidence of that band
 
 Above what PSI value might we need to start to consider rebuilding or recalibrating the model
 
-- PSI > 0.2
+- PSI > 0.1
 
 What are the common errors that can crop up when implementing a model? 
 
-- 
+- Incorrectly coded in the target system, required variable manipulations not possible in the target system and different interpretations of missing or null values
 
 After performance monitoring, if we find that the discrimination is still satisfactory but the accuracy has deteriorated, what is the recommended action?
 
@@ -71,8 +76,10 @@ Why is it important to have a unique model identifier for each model?
 
 -A Model Inventory is a database/MIS developed for the purpose of aggregating quantitative model related information that is in use by a firm or organization. 
 Model identifier is an individual code to ensure that each model can be uniquely identified.
+So that we have a clear audit trail for all automated decisions.
 
 Why is it important to document the modelling rationale and approach? 
 
 - This includes, the business context within which the model was developed, the selected technique and why it was chosen, the limitations of your model, and how your training and test dataset selection was made.
+To enable oversight and challenge throughout the model development process.
 
