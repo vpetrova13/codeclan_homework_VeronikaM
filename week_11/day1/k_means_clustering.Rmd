@@ -1,0 +1,78 @@
+---
+title: "K-means clustering"
+output: html_notebook
+---
+
+Clustering is the task of dividing the population or data points into a number of groups such that data points in the same groups are more similar to other data points in the same group than those in other groups. In simple words, the aim is to segregate groups with similar traits and assign them into clusters.
+
+K-means clustering is a powerful unsupervised machine learning algorithm. It is used to solve many complex unsupervised machine learning problems. 
+
+**Definition:**
+
+***'A K-means clustering algorithm tries to group similar items in the form of clusters. The number of groups is represented by K.'***
+
+K-means clustering is type of **centroid models**:
+
+These are iterative clustering algorithms in which the notion of similarity is derived by the closeness of a data point to the centroid of the clusters. In these models, the no. of clusters required at the end have to be mentioned beforehand, which makes it important to have prior knowledge of the dataset.
+
+**5 steps of algorithm: **
+
+1) Specify the desired number of clusters K : Let us choose k=2 for these 5 data points in 2-D space.
+
+![](https://www.analyticsvidhya.com/wp-content/uploads/2016/11/clustering-2.png)
+
+2) Randomly assign each data point to a cluster : Let’s assign three points in cluster 1 shown using red color and two points in cluster 2 shown using grey color.
+
+![](https://www.analyticsvidhya.com/wp-content/uploads/2016/11/clustering-2-1.png)
+
+3) Compute cluster centroids : The centroid of data points in the red cluster is shown using red cross and those in grey cluster using grey cross.
+
+![](https://www.analyticsvidhya.com/wp-content/uploads/2016/11/clustering-3.png)
+
+4) Re-assign each point to the closest cluster centroid using Euclidean distance (based on Pythagorean theorem): Note that only the data point at the bottom is assigned to the red cluster even though its closer to the centroid of grey cluster. Thus, we assign that data point into grey cluster.
+
+![](https://www.analyticsvidhya.com/wp-content/uploads/2016/11/clustering-4.png)
+
+5) Re-compute cluster centroids **(calculate the mean of clusters)** : Now, re-computing the centroids for both the clusters.
+
+![](https://www.analyticsvidhya.com/wp-content/uploads/2016/11/clustering-5.png)
+
+6) Repeat steps 4 and 5 until no improvements are possible : Similarly, we’ll repeat the 4th and 5th steps until we’ll reach global optima. When there will be no further switching of data points between two clusters for two successive repeats. It will mark the termination of the algorithm if not explicitly mentioned.
+
+To sum up for k = 2:
+
+**K means clustering picks 2 initial points and then clusters all the remaining points, calculates the mean of each cluster and then reclusters based on the new means. It repeats until the cluster no longer changes.** 
+
+**Advantages of K-means**
+
+* It is very simple to implement.
+* It can handle big data well.
+* It adapts the new examples very frequently.
+* Generalization of clusters for different shapes and sizes.
+ 
+
+**Disadvantages of K-means**
+
+* It is sensitive to the outliers.
+* Choosing the k values manually is a tough job.
+* As the number of dimensions increases its scalability decreases.
+
+
+
+**Applications**
+
+Clustering has a large no. of applications spread across various domains. Some of the most popular applications of clustering are:
+
+* Recommendation engines
+* Market segmentation
+* Social network analysis
+* Search result grouping
+* Medical imaging
+* Image segmentation
+* Anomaly detection
+
+**Recources**
+
+* https://www.analyticsvidhya.com/blog/2016/11/an-introduction-to-clustering-and-different-methods-of-clustering/
+* https://www.analyticsvidhya.com/blog/2020/10/a-simple-explanation-of-k-means-clustering/
+* https://www.youtube.com/watch?v=4b5d3muPQmA
