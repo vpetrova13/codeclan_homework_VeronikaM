@@ -1,0 +1,131 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+```{r}
+avocado <- read_csv("data/avocado.csv") %>% clean_names()
+avocado_dict <- read_csv("data/data_dict.txt")
+glimpse(avocado)
+```
+```{r}
+avocado_tidy <- avocado %>% 
+  #remove x1 column as not sure what it means
+  select(-x1) %>% 
+  mutate(date = str_extract(date, "\\-[\\d]{2}")) %>% 
+  mutate(date = case_when(date == "-12"| date == "-01"| date == "-02" ~ "winter",
+                          date == "-03"| date == "-04"| date == "-05" ~ "spring",
+                          date == "-06"| date == "-07"| date == "-08" ~ "summer",
+                          date == "-09"| date == "-10"| date =="-11" ~ "autumn")) %>% 
+  mutate(type = as_factor(type)) %>% 
+  mutate(year = as_factor(year)) %>% 
+  select(-region)
+  
+avocado_tidy
+```
+```{r}
+alias(average_price ~ ., data = avocado_tidy)
+#no any other correlations found in data
+```
+```{r}
+summary(avocado_tidy)
+#there is non NA in data
+#as it is all quantity there is no need to standardise the data
+```
+```{r}
+library(leaps)
+```
+
+```{r}
+regsubsets_forward <- regsubsets(average_price ~ ., data = avocado_tidy, nvmax = 11, method = "forward")
+sum <- summary(regsubsets_forward)
+```
+
+```{r}
+sum$which
+```
+```{r}
+plot(regsubsets_forward, scale = "adjr2")
+plot(regsubsets_forward, scale = "bic")
+#Plots showing the same results for variables that most date, various PLU, xl bags and 
+#year contribute to R2 equally.
+```
+```{r}
+plot(sum$rsq, type = "b")
+plot(sum$bic, type = "b")
+#Plots show that 8 variables required to get the best BIC and R2 value.
+```
+```{r}
+regsubsets_forward <- regsubsets(average_price ~ ., data = avocado_tidy, nvmax = 8, method = "forward")
+summary(regsubsets_forward)
+```
+```{r}
+n_data <- nrow(avocado_tidy)
+test_index <- sample(1:n_data, size = n_data*0.1)
+
+test  <- slice(avocado_tidy, test_index)
+train <- slice(avocado_tidy, -test_index)
+```
+
+```{r}
+model <- lm(average_price ~ type + year + date, data = train)
+summary(model)
+#all variables are significant 
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+#residuals distirbution is good
+```
+```{r}
+model <- lm(average_price ~ ., data = train)
+summary(model)
+#all bags variables are not significant for predictions
+```
+```{r}
+model <- lm(average_price ~ type + date  +x4046 +x4225 + x4770 +
+              year, data = train)
+summary(model)
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+#residuals are independent and well distributed
+```
+```{r}
+model_int <- lm(average_price ~ type + date  +x4046 +x4225 + x4770 +
+              year + type:date + type:x4046 + type:x4225 +type:x4770, data = train)
+summary(model_int)
+anova(model, model_int)
+#Interactions show significant difference between the model without them
+```
+```{r}
+predictions <- predict(model_int, newdata = test)
+mean((predictions - test$average_price)**2)
+```
+```{r}
+predictions <- predict(model_int, newdata = train)
+mean((predictions - train$average_price)**2)
+```
+```{r}
+library(relaimpo)
+calc.relimp(model_int, type = "lmg", rela = TRUE)
+```
+```{r}
+broom::glance(model_int)
+```
+```{r}
+broom::glance(model)
+```
+model_int is the best model after all the checks for predictions of average_price for avocados. However, it can predict only around 48%.
+```{r}
+summary(model_int)
+```
+
+
+
+
