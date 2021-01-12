@@ -1,0 +1,131 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+
+titanic_set <- read_csv('data/titanic_decision_tree_data.csv')
+
+shuffle_index <- sample(1:nrow(titanic_set))
+
+# shuffle the data so class order isn't in order - need this for training/testing split later on 
+titanic_set <- titanic_set[shuffle_index, ]
+```
+```{r}
+glimpse(titanic_set)
+```
+```{r}
+summary(titanic_set)
+```
+```{r}
+titanic_tidy <- titanic_set %>% 
+  select(-X1, -passenger_id, -name, -ticket, -fare, -cabin) %>% 
+  drop_na(survived) %>% 
+  mutate(sex = as.factor(sex)) %>% 
+  mutate(survived = as.factor(survived)) %>% 
+  mutate(pclass = as.factor(pclass)) %>% 
+  mutate(embarked = as.factor(embarked)) %>% 
+  mutate(age_status = ifelse(age <= 16, "child", "adult")) %>% 
+  mutate(age_status = as.factor(age_status)) %>% 
+  drop_na() %>% 
+  select(-age)
+
+summary(titanic_tidy)
+```
+```{r}
+titanic_clean <- titanic_set %>%
+  filter(survived %in% c(0,1)) %>%
+# Convert to factor level
+    mutate(sex = as.factor(sex), 
+           age_status = as.factor(if_else(age <= 16, "child", "adult")),
+         class = factor(pclass, levels = c(3,2,1), labels = c("Lower", "Middle", "Upper")), 
+           survived_flag = factor(survived, levels = c(0,1), labels = c("No", "Yes")), 
+           port_embarkation = as.factor(embarked)) %>%
+  select(sex, age_status, class, port_embarkation, sib_sp, parch, survived_flag) %>%
+  na.omit()
+```
+
+```{r}
+summary(titanic_clean)
+```
+```{r}
+titanic_clean
+```
+```{r}
+library(GGally)
+ggpairs(titanic_clean)
+```
+Sex, age status, class and port embarked seem to have strong relation in survive prediction. Sibsp and parch does not look to affect much the survived_flag.
+
+```{r}
+n_data <- nrow(titanic_clean)
+```
+
+```{r}
+test_index <- sample(1:n_data, size = n_data * 0.2)
+```
+```{r}
+titanic_test  <- slice(titanic_clean, test_index)
+titanic_train <- slice(titanic_clean, -test_index)
+```
+I chose usual split which is 80:20 for this analysis.
+```{r}
+titanic_test %>% 
+  janitor::tabyl(survived_flag)
+```
+```{r}
+titanic_train %>% 
+  janitor::tabyl(survived_flag)
+```
+```{r}
+titanic_fit <- rpart(
+  formula = survived_flag ~ .,
+  data = titanic_train,
+  method = "class"
+)
+```
+
+```{r}
+rpart.plot(titanic_fit, yesno = 2, fallen.leaves = TRUE, faclen = 6, digits = 4)
+
+```
+Around 40% of all people in data has not survived and if you are male you have 65% to not survive. The higher chances to survive if you are female and from higher class (22%). But if you are female from lower class then there are 13 chances to not survive. If you have siblings more than 1 then there are less chances to survive (8%).
+```{r}
+library(modelr)
+
+titanic_test_pred <- titanic_test %>% 
+  add_predictions(titanic_fit, type = "class")
+
+titanic_test_pred
+```
+```{r}
+library(yardstick)
+```
+```{r}
+conf_mat <- titanic_test_pred %>% 
+  conf_mat(truth = survived_flag, estimate = pred)
+
+conf_mat
+```
+```{r}
+accuracy <- titanic_test_pred %>% 
+  accuracy(truth = survived_flag, estimate = pred)
+
+accuracy
+```
+it has around 76% accuracy based on test data which is quite good. Diagonal from top left to bottom right shows true positives and true negatives.
+```{r}
+titanic_fit <- rpart(
+  formula = survived_flag ~ .,
+  data = titanic_train,
+  method = "class",
+  control = rpart.control(maxdepth = 20, xval = 5, cp = 0)
+)
+
+rpart.plot(titanic_fit, yesno = 2, fallen.leaves = TRUE, faclen = 6, digits = 4, type = 4, extra = 101)
+```
+
