@@ -60,6 +60,17 @@ library(GGally)
 ggpairs(titanic_clean)
 ```
 Sex, age status, class and port embarked seem to have strong relation in survive prediction. Sibsp and parch does not look to affect much the survived_flag.
+```{r}
+titanic_clean %>%
+  select(survived_flag, sex) %>%
+  group_by(survived_flag,sex) %>%
+  summarise(total_count = n()) %>%
+ggplot() + 
+  aes(x = survived_flag, y = total_count, fill = sex) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_brewer(palette="Dark2") + 
+  ylab("total count") + xlab("survived")
+```
 
 ```{r}
 n_data <- nrow(titanic_clean)

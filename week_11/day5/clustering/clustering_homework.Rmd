@@ -1,0 +1,75 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+```{r}
+customers <- read_csv("mall_customers.csv") %>% janitor::clean_names()
+customers
+```
+```{r}
+customers %>% 
+  ggplot(aes(x = annual_income_k, y = spending_score_1_100, colour = gender)) +
+  geom_point()
+```
+```{r}
+customers %>% 
+  ggplot(aes(x = age, y = spending_score_1_100, colour = gender)) +
+  geom_point()
+```
+There is difference in groups between age but not much difference between gender.
+```{r}
+customers_tidy <- customers %>% 
+  mutate_if(is.numeric, scale) %>% 
+  select(-customer_id, -gender, -age)
+
+customers_tidy
+```
+```{r}
+clustered_customers <- kmeans(customers_tidy, centers = 6, nstart = 25)
+clustered_customers
+```
+```{r}
+library(broom)
+glance(clustered_customers)
+```
+```{r}
+augment(clustered_customers, customers_tidy) %>% 
+  ggplot(aes(x = annual_income_k, y = spending_score_1_100, colour = .cluster)) +
+  geom_point() 
+```
+There are definitely 5 clusters noticed by eye.
+```{r}
+library(factoextra)
+fviz_nbclust(customers_tidy, kmeans, method = "wss", nstart = 25)
+```
+```{r}
+fviz_nbclust(customers_tidy, kmeans, method = "silhouette", nstart = 25)
+
+```
+```{r}
+fviz_nbclust(customers_tidy, kmeans, method = "gap_stat", k.max = 10)
+
+```
+Elbow method has shown value at around 4 and 5, the 2nd method shows number 5 and the last method shows number 1. For the next clustering, 5 k will be used. 
+```{r}
+clustered_customers <- kmeans(customers_tidy, centers = 5, nstart = 25)
+clustered_customers
+```
+```{r}
+augment(clustered_customers, customers_tidy) %>% 
+  ggplot(aes(x = annual_income_k, y = spending_score_1_100, colour = .cluster)) +
+  geom_point() 
+```
+There are definite 5 clusters of people according to annual income and spending score and it seems like a good fit for the data.
+People can be segmented into 5 groups:
+1) low income, low spend 
+2) high income, low spend 
+3) high income, high spend
+4) low income, high spend
+5) moderate income and spend
+
+
