@@ -11,6 +11,14 @@ customers <- read_csv("mall_customers.csv") %>% janitor::clean_names()
 customers
 ```
 ```{r}
+customers %>%
+  group_by(gender) %>%
+  summarise(count = n()) %>%
+ggplot(aes(x = gender, y = count)) +
+  geom_col()
+```
+
+```{r}
 customers %>% 
   ggplot(aes(x = annual_income_k, y = spending_score_1_100, colour = gender)) +
   geom_point()
@@ -28,6 +36,20 @@ customers_tidy <- customers %>%
 
 customers_tidy
 ```
+```{r}
+max_k <- 20 
+
+k_clusters <- tibble(k = 2:max_k) %>%
+  mutate(
+    kclust = map(k, ~ kmeans(customers_tidy, .x, nstart = 25)), 
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, customers_tidy)
+  )
+
+k_clusters
+```
+
 ```{r}
 clustered_customers <- kmeans(customers_tidy, centers = 6, nstart = 25)
 clustered_customers
@@ -52,7 +74,6 @@ fviz_nbclust(customers_tidy, kmeans, method = "silhouette", nstart = 25)
 ```
 ```{r}
 fviz_nbclust(customers_tidy, kmeans, method = "gap_stat", k.max = 10)
-
 ```
 Elbow method has shown value at around 4 and 5, the 2nd method shows number 5 and the last method shows number 1. For the next clustering, 5 k will be used. 
 ```{r}

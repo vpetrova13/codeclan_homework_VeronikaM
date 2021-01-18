@@ -31,23 +31,39 @@ orange_tidy <- orange_juice %>%
 orange_tidy
 ```
 ```{r}
+orange_tidy %>%
+  group_by(purchase_mm) %>%
+  summarise(n = n())
+```
+
+```{r}
 #it was found that there is 52 weeks which is a year
 sort(unique(orange_juice$weekof_purchase))
-278 - 227 = 51
+#278 - 227 = 51
 ```
 ```{r}
 alias(purchase_mm ~ ., data = orange_tidy)
 ```
 ```{r}
 orange_tidy <- orange_tidy %>% 
-  select(-c(sale_price_mm, sale_price_ch, price_diff, store7, list_price_diff, store))
+  select(-c(sale_price_mm, sale_price_ch, price_diff, store7, list_price_diff, store)) %>%
+  drop_na()
 
 #all variables which has collinearity were removed
 ```
 
 ```{r}
-orange_tidy
+ggpairs(orange_tidy)
 ```
+
+```{r}
+orange_tidy %>%
+  ggplot(aes(x = quarters, fill = purchase_mm)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
 ```{r}
 #split the data into train and test
 n_data <- nrow(orange_tidy)
@@ -55,6 +71,14 @@ test_index <- sample(1:n_data, size = n_data*0.2)
 
 test  <- slice(orange_tidy, test_index)
 train <- slice(orange_tidy, -test_index)
+```
+```{r}
+train %>%
+  janitor::tabyl(purchase_mm)
+```
+```{r}
+train %>%
+  janitor::tabyl(purchase_mm)
 ```
 
 
@@ -117,14 +141,26 @@ roc_train <- model_predictions %>%
   roc(response = purchase_mm, predictor = pred)
 ```
 ```{r}
-library(pROC)
+roc <- test %>%
+  add_predictions(model, type = "response") %>%
+  roc(response = purchase_mm, predictor = pred)
+```
 
+
+```{r}
+library(pROC)
+auc(roc)
 auc(roc_train)
 ```
 ```{r}
 library(caret)
+
 orange_tidy <- orange_tidy %>% 
-  mutate(purchase_mm = as_factor(if_else(TRUE, "t", "f"))) 
+  mutate(purchase_mm = as_factor(if_else(purchase_mm, "t", "f"))) 
+
+train <- train %>% 
+  mutate(purchase_mm = as_factor(if_else(purchase_mm, "t", "f")))
+
 train_control <- trainControl(method = "repeatedcv", 
                               number = 5,
                               repeats = 100,
@@ -135,11 +171,19 @@ train_control <- trainControl(method = "repeatedcv",
 ```{r}
 model_cv <- train(purchase_mm ~ price_ch + price_mm + disc_mm + loyal_ch + 
  pct_disc_mm + pct_disc_ch,
-               data = orange_tidy,
+               data = train,
                trControl = train_control,
                method = "glm",
                family = binomial(link = 'logit'))
+
+summary(model_cv)
 ```
+```{r}
+model_cv$results
+```
+
+
+
 
 
 
