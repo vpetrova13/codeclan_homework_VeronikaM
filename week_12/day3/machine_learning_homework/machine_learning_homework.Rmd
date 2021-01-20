@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+```{r}
+cars <- read_csv("car_dekho_details.csv")
+head(cars)
+```
+
+```{r}
+clean_cars <- cars %>% 
+  select(-name) %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate(fuel = as.factor(fuel)) %>% 
+  mutate(seller_type = as.factor(seller_type)) %>% 
+  mutate(transmission = as.factor(transmission)) %>% 
+  mutate(owner = as.factor(owner))
+```
+
+```{r}
+summary(clean_cars)
+```
+```{r}
+alias(clean_cars)
+```
+
+```{r}
+library(caret)
+```
+```{r}
+model <- lm(selling_price ~ ., data = clean_cars)
+summary(model)
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+```
+```{r}
+library(broom)
+```
+```{r}
+glance(model)
+```
+```{r}
+library(GGally)
+```
+```{r}
+clean_cars %>% 
+  select(-year) %>% 
+  ggpairs()
+```
+
+
